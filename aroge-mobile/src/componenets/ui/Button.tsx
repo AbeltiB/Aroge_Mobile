@@ -6,6 +6,9 @@ import {
   StyleSheet,
   Text,
   View,
+  StyleProp,      
+  ViewStyle,      
+  TextStyle,      
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontFamily, FontSize, FontWeight, BorderRadius, Spacing, Shadow } from '../../constants';
@@ -21,76 +24,37 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
-}
+  style?: StyleProp<ViewStyle>; 
+  textStyle?: StyleProp<TextStyle>;
+} // 👈 Fixed: Removed stray extra `}`
 
 const variantStyles = {
   primary: {
-    container: {
-      backgroundColor: Colors.terracotta.primary,
-      borderWidth: 0,
-    },
-    pressed: {
-      backgroundColor: Colors.terracotta.pressed,
-    },
-    label: {
-      color: Colors.text.onTerracotta,
-    },
+    container: { backgroundColor: Colors.terracotta.primary, borderWidth: 0 },
+    pressed: { backgroundColor: Colors.terracotta.pressed },
+    label: { color: Colors.text.onTerracotta },
   },
   secondary: {
-    container: {
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderColor: Colors.green.primary,
-    },
-    pressed: {
-      backgroundColor: Colors.green.tint,
-    },
-    label: {
-      color: Colors.green.primary,
-    },
+    container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.green.primary },
+    pressed: { backgroundColor: Colors.green.tint },
+    label: { color: Colors.green.primary },
   },
   ghost: {
-    container: {
-      backgroundColor: 'transparent',
-      borderWidth: 0,
-    },
-    pressed: {
-      backgroundColor: Colors.cream.subtle,
-    },
-    label: {
-      color: Colors.green.primary,
-    },
+    container: { backgroundColor: 'transparent', borderWidth: 0 },
+    pressed: { backgroundColor: Colors.cream.subtle },
+    label: { color: Colors.green.primary },
   },
   telegram: {
-    container: {
-      backgroundColor: Colors.telegram,
-      borderWidth: 0,
-    },
-    pressed: {
-      backgroundColor: Colors.telegramDark,
-    },
-    label: {
-      color: '#ffffff',
-    },
+    container: { backgroundColor: Colors.telegram, borderWidth: 0 },
+    pressed: { backgroundColor: Colors.telegramDark },
+    label: { color: '#ffffff' },
   },
 } as const;
 
 const sizeStyles = {
-  sm: {
-    container: { height: 40, paddingHorizontal: Spacing[3] },
-    label: { fontSize: FontSize.sm },
-    gap: 6,
-  },
-  md: {
-    container: { height: 52, paddingHorizontal: Spacing[5] },
-    label: { fontSize: FontSize.base },
-    gap: 8,
-  },
-  lg: {
-    container: { height: 60, paddingHorizontal: Spacing[6] },
-    label: { fontSize: FontSize.md },
-    gap: 10,
-  },
+  sm: { container: { height: 40, paddingHorizontal: Spacing[3] }, label: { fontSize: FontSize.sm }, gap: 6 },
+  md: { container: { height: 52, paddingHorizontal: Spacing[5] }, label: { fontSize: FontSize.base }, gap: 8 },
+  lg: { container: { height: 60, paddingHorizontal: Spacing[6] }, label: { fontSize: FontSize.md }, gap: 10 },
 } as const;
 
 export const Button: React.FC<ButtonProps> = ({
@@ -103,6 +67,8 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = true,
   onPress,
   disabled,
+  style: customStyle,        // 👈 Destructure & rename
+  textStyle: customTextStyle,// 👈 Destructure & rename
   ...rest
 }) => {
   const variantStyle = variantStyles[variant];
@@ -129,6 +95,7 @@ export const Button: React.FC<ButtonProps> = ({
         fullWidth && styles.fullWidth,
         pressed && !isDisabled && variantStyle.pressed,
         isDisabled && styles.disabled,
+        customStyle, // 👈 Merges your passed style prop
       ]}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -138,13 +105,18 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           color={variantStyle.label.color}
-          size={size === 'sm' ? 'small' : 'small'}
+          size="small" // 👈 Simplified: both branches were 'small' anyway
         />
       ) : (
         <View style={[styles.content, { gap: sizeStyle.gap }]}>
           {icon && iconPosition === 'left' && icon}
           <Text
-            style={[styles.label, sizeStyle.label, variantStyle.label]}
+            style={[
+              styles.label,
+              sizeStyle.label,
+              variantStyle.label,
+              customTextStyle, // 👈 Applied textStyle
+            ]}
             numberOfLines={1}
           >
             {label}

@@ -1,182 +1,159 @@
-import React, { useCallback } from 'react';
+import React, { forwardRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  PressableProps,
   StyleSheet,
   Text,
+  TextInput,
+  TextInputProps,
   View,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { Colors, FontFamily, FontSize, FontWeight, BorderRadius, Spacing, Shadow } from '../../constants';
+import {
+  BorderRadius,
+  Colors,
+  FontFamily,
+  FontSize,
+  Spacing,
+} from '../../constants';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'telegram';
-type ButtonSize = 'sm' | 'md' | 'lg';
-
-interface ButtonProps extends Omit<PressableProps, 'style'> {
-  label: string;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  loading?: boolean;
-  icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
-  fullWidth?: boolean;
+interface PhoneInputProps extends Omit<TextInputProps, 'keyboardType' | 'maxLength'> {
+  label?: string;
+  error?: string;
+  /** Defaults to '+251' (Ethiopia) */
+  countryCode?: string;
+  /** Defaults to 🇪🇹 */
+  countryFlag?: string;
 }
 
-const variantStyles = {
-  primary: {
-    container: {
-      backgroundColor: Colors.terracotta.primary,
-      borderWidth: 0,
+/**
+ * PhoneInput — Ethiopian phone number entry.
+ * Displays a fixed +251 prefix and restricts input to 9 digits.
+ *
+ * Usage:
+ *   <PhoneInput
+ *     value={phone}
+ *     onChangeText={setPhone}
+ *     error={phoneError}
+ *   />
+ */
+export const PhoneInput = forwardRef<TextInput, PhoneInputProps>(
+  (
+    {
+      label = 'Phone number',
+      error,
+      countryCode = '+251',
+      countryFlag = '🇪🇹',
+      value,
+      onChangeText,
+      ...rest
     },
-    pressed: {
-      backgroundColor: Colors.terracotta.pressed,
-    },
-    label: {
-      color: Colors.text.onTerracotta,
-    },
-  },
-  secondary: {
-    container: {
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderColor: Colors.green.primary,
-    },
-    pressed: {
-      backgroundColor: Colors.green.tint,
-    },
-    label: {
-      color: Colors.green.primary,
-    },
-  },
-  ghost: {
-    container: {
-      backgroundColor: 'transparent',
-      borderWidth: 0,
-    },
-    pressed: {
-      backgroundColor: Colors.cream.subtle,
-    },
-    label: {
-      color: Colors.green.primary,
-    },
-  },
-  telegram: {
-    container: {
-      backgroundColor: Colors.telegram,
-      borderWidth: 0,
-    },
-    pressed: {
-      backgroundColor: Colors.telegramDark,
-    },
-    label: {
-      color: '#ffffff',
-    },
-  },
-} as const;
+    ref,
+  ) => {
+    const [focused, setFocused] = useState(false);
 
-const sizeStyles = {
-  sm: {
-    container: { height: 40, paddingHorizontal: Spacing[3] },
-    label: { fontSize: FontSize.sm },
-    gap: 6,
-  },
-  md: {
-    container: { height: 52, paddingHorizontal: Spacing[5] },
-    label: { fontSize: FontSize.base },
-    gap: 8,
-  },
-  lg: {
-    container: { height: 60, paddingHorizontal: Spacing[6] },
-    label: { fontSize: FontSize.md },
-    gap: 10,
-  },
-} as const;
+    const hasError = !!error;
+    const borderColor = hasError
+      ? Colors.error
+      : focused
+      ? Colors.border.focus
+      : Colors.border.default;
 
-export const Button: React.FC<ButtonProps> = ({
-  label,
-  variant = 'primary',
-  size = 'md',
-  loading = false,
-  icon,
-  iconPosition = 'left',
-  fullWidth = true,
-  onPress,
-  disabled,
-  ...rest
-}) => {
-  const variantStyle = variantStyles[variant];
-  const sizeStyle = sizeStyles[size];
+    const handleChange = (text: string) => {
+      // Strip non-digits and enforce max 9 characters
+      const digits = text.replace(/\D/g, '').slice(0, 9);
+      onChangeText?.(digits);
+    };
 
-  const handlePress = useCallback(
-    (event: Parameters<NonNullable<PressableProps['onPress']>>[0]) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress?.(event);
-    },
-    [onPress],
-  );
+    return (
+      <View style={styles.wrapper}>
+        {label && <Text style={styles.label}>{label}</Text>}
 
-  const isDisabled = disabled || loading;
+        <View style={[styles.container, { borderColor }]}>
+          {/* Country prefix */}
+          <View style={styles.prefix}>
+            <Text style={styles.flag}>{countryFlag}</Text>
+            <Text style={styles.code}>{countryCode}</Text>
+            <View style={styles.divider} />
+          </View>
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        sizeStyle.container,
-        variantStyle.container,
-        fullWidth && styles.fullWidth,
-        pressed && !isDisabled && variantStyle.pressed,
-        isDisabled && styles.disabled,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
-      {...rest}
-    >
-      {loading ? (
-        <ActivityIndicator
-          color={variantStyle.label.color}
-          size={size === 'sm' ? 'small' : 'small'}
-        />
-      ) : (
-        <View style={[styles.content, { gap: sizeStyle.gap }]}>
-          {icon && iconPosition === 'left' && icon}
-          <Text
-            style={[styles.label, sizeStyle.label, variantStyle.label]}
-            numberOfLines={1}
-          >
-            {label}
-          </Text>
-          {icon && iconPosition === 'right' && icon}
+          <TextInput
+            ref={ref}
+            value={value}
+            onChangeText={handleChange}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            keyboardType="number-pad"
+            maxLength={9}
+            placeholder="9 12 34 56 78"
+            placeholderTextColor={Colors.text.muted}
+            selectionColor={Colors.green.primary}
+            returnKeyType="done"
+            textContentType="telephoneNumber"
+            autoComplete="tel"
+            style={styles.input}
+            {...rest}
+          />
         </View>
-      )}
-    </Pressable>
-  );
-};
+
+        {hasError && <Text style={styles.error}>{error}</Text>}
+      </View>
+    );
+  },
+);
+
+PhoneInput.displayName = 'PhoneInput';
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: BorderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadow.sm,
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  wrapper: {
+    gap: 6,
   },
   label: {
     fontFamily: FontFamily.sans,
-    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.text.secondary,
     letterSpacing: 0.2,
   },
-  disabled: {
-    opacity: 0.48,
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.cream.surface,
+    height: 56,
+    overflow: 'hidden',
+  },
+  prefix: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: Spacing[4],
+    gap: 6,
+  },
+  flag: {
+    fontSize: 20,
+  },
+  code: {
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.base,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.border.default,
+    marginLeft: 8,
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: Spacing[3],
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.md,
+    color: Colors.text.primary,
+    letterSpacing: 1.5,
+    height: '100%',
+  },
+  error: {
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.xs,
+    color: Colors.error,
   },
 });
