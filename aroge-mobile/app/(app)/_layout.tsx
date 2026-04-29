@@ -1,12 +1,18 @@
-import { Stack } from 'expo-router';
+import { Tabs } from 'expo-router';
+import { Colors } from '../../src/constants';
 
 export default function AppStackLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name='(tabs)' />
-      <Stack.Screen name='product/[id]' />
-      <Stack.Screen name='checkout' />
-      <Stack.Screen name='create-listing' />
-    </Stack>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { backgroundColor: Colors.green.primary, borderTopWidth: 0, height: 64 },
+        tabBarActiveTintColor: Colors.gold.primary,
+        tabBarInactiveTintColor: Colors.cream.background,
+      }}
+    >
+      <Tabs.Screen name='index' options={{ title: 'Home' }} />
+      <Tabs.Screen name='profile' options={{ title: 'Profile' }} />
+    </Tabs>
   );
 }
