@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Colors } from '../../src/constants';
 
-export default function AppLayout() {
+export default function AppStackLayout() {
   return (
     <Tabs
       screenOptions={{
