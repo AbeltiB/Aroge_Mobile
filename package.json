@@ -1,0 +1,44 @@
+{
+  "name": "aroge-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "aroge-sdk": "^1.0.0",
+    "expo": "^49.0.23",
+    "expo-constants": "~55.0.13",
+    "expo-device": "~5.4.0",
+    "expo-haptics": "~55.0.14",
+    "expo-image-picker": "~14.3.2",
+    "expo-linear-gradient": "~55.0.13",
+    "expo-linking": "~7.1.4",
+    "expo-notifications": "^0.20.1",
+    "expo-router": "~55.0.12",
+    "expo-secure-store": "~15.0.2",
+    "expo-splash-screen": "^0.10.3",
+    "expo-status-bar": "~55.0.5",
+    "expo-web-browser": "~14.1.6",
+    "react": "19.2.0",
+    "react-native": "0.83.6",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-reanimated": "4.2.1",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "15.15.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}

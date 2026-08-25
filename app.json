@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Aroge",
+    "slug": "aroge-mobile",
+    "scheme": "aroge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1f7a5a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.aroge.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1f7a5a"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.aroge.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1f7a5a",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Aroge uses your photos to add pictures to your listings.",
+          "cameraPermission": "Aroge uses your camera to take photos for your listings."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#1f7a5a"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:4000/api/v1",
+      "telegramBotUsername": "aroge_telegram_bot",
+      "telegramBotId": "8514578230",
+      "telegramLoginOrigin": "https://aroge.app",
+      "deepLinkScheme": "aroge",
+      "eas": {
+        "projectId": "replace-with-your-eas-project-id"
+      }
+    },
+    "owner": "replace-with-your-expo-username"
+  }
+}
