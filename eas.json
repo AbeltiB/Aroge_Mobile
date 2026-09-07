@@ -19,6 +19,16 @@
         "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_telegram_bot"
       }
     },
+    "apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://aroge-api.onrender.com/api/v1",
+        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_telegram_bot"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "env": {
