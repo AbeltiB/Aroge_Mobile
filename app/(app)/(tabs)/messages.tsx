@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors } from '../../../src/lib/colors';
 import { api } from '../../../src/lib/api';
-import type { MessageThread } from 'aroge-sdk';
+import type { MessageThread } from '@arogenpm/sdk';
 
 export default function MessagesScreen() {
   const router = useRouter();

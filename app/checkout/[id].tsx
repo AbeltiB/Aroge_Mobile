@@ -7,9 +7,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../src/lib/colors';
 import { api } from '../../src/lib/api';
-import { formatETB, calculateFees } from 'aroge-sdk';
-import type { Listing, Bundle, PlatformFee, AppliedFee, BankAccount } from 'aroge-sdk';
+import { formatETB, calculateFees } from '@arogenpm/sdk';
+import type { Listing, Bundle, PlatformFee, AppliedFee, BankAccount } from '@arogenpm/sdk';
 
+// Telebirr/CBE Birr gateway integration is on hold — bank transfer (verified
+// via verify.et, with manual review as a fallback) is the only real payment
+// path for now. Kept in the type/schema for when real gateways come online.
 type PaymentMethod = 'TELEBIRR' | 'CBE_BIRR' | 'BANK_TRANSFER';
 type DeliveryMethod = 'MEETUP' | 'AROGE_DELIVERY';
 
@@ -68,7 +71,7 @@ export default function CheckoutScreen() {
   const [fees, setFees] = useState<PlatformFee[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>({ isEnabled: false, fee: 0 });
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('TELEBIRR');
+  const [paymentMethod] = useState<PaymentMethod>('BANK_TRANSFER');
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('MEETUP');
   const [dropoffAddress, setDropoffAddress] = useState('');
   const [loading, setLoading] = useState(true);
@@ -111,6 +114,10 @@ export default function CheckoutScreen() {
   const total = itemPrice + deliveryFee + serviceFee;
 
   async function placeOrder() {
+    if (bankAccounts.length === 0) {
+      Alert.alert('Checkout Unavailable', 'No payment account is configured yet. Please try again later.');
+      return;
+    }
     if (deliveryMethod === 'AROGE_DELIVERY' && !dropoffAddress.trim()) {
       Alert.alert('Delivery Address Needed', 'Enter where the courier should drop off your item.');
       return;
@@ -166,50 +173,32 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
-        {/* Payment method */}
+        {/* Payment method — Telebirr/CBE Birr gateway integration is on hold;
+            bank transfer (verified via verify.et, with manual review as a
+            fallback) is the only real payment path for now. */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>PAYMENT METHOD</Text>
           <View style={styles.optionGroup}>
             <RadioOption
-              label="Telebirr"
-              sub="Ethiopia's #1 mobile money"
-              selected={paymentMethod === 'TELEBIRR'}
-              onPress={() => setPaymentMethod('TELEBIRR')}
+              label="Bank Transfer"
+              sub="Transfer, then verify instantly with your reference number"
+              selected
+              onPress={() => {}}
             />
-            <View style={styles.divider} />
-            <RadioOption
-              label="CBE Birr"
-              sub="Commercial Bank of Ethiopia"
-              selected={paymentMethod === 'CBE_BIRR'}
-              onPress={() => setPaymentMethod('CBE_BIRR')}
-            />
-            {bankAccounts.length > 0 && (
-              <>
-                <View style={styles.divider} />
-                <RadioOption
-                  label="Bank Transfer"
-                  sub="Transfer manually, then upload your receipt"
-                  selected={paymentMethod === 'BANK_TRANSFER'}
-                  onPress={() => setPaymentMethod('BANK_TRANSFER')}
-                />
-              </>
-            )}
           </View>
 
-          {paymentMethod === 'BANK_TRANSFER' && (
-            <View style={styles.bankNote}>
-              {bankAccounts.map((acct) => (
-                <View key={acct.id} style={styles.bankRow}>
-                  <Text style={styles.bankName}>{acct.bankName}</Text>
-                  <Text style={styles.bankDetail}>{acct.accountName}</Text>
-                  <Text style={styles.bankDetail}>{acct.accountNumber}</Text>
-                </View>
-              ))}
-              <Text style={styles.bankNoteText}>
-                After placing your order, you'll be asked to upload a photo of your transfer receipt. An admin will verify it before your payment is held in escrow.
-              </Text>
-            </View>
-          )}
+          <View style={styles.bankNote}>
+            {bankAccounts.map((acct) => (
+              <View key={acct.id} style={styles.bankRow}>
+                <Text style={styles.bankName}>{acct.bankName}</Text>
+                <Text style={styles.bankDetail}>{acct.accountName}</Text>
+                <Text style={styles.bankDetail}>{acct.accountNumber}</Text>
+              </View>
+            ))}
+            <Text style={styles.bankNoteText}>
+              After placing your order, transfer the total to one of the accounts above. Enter the transaction reference to verify automatically, or upload a receipt photo for manual review.
+            </Text>
+          </View>
         </View>
 
         {/* Delivery method */}
@@ -304,9 +293,9 @@ export default function CheckoutScreen() {
           <Text style={styles.footerTotalValue}>{formatETB(total)}</Text>
         </View>
         <TouchableOpacity
-          style={[styles.placeBtn, placing && { opacity: 0.6 }]}
+          style={[styles.placeBtn, (placing || bankAccounts.length === 0) && { opacity: 0.6 }]}
           onPress={placeOrder}
-          disabled={placing}
+          disabled={placing || bankAccounts.length === 0}
           activeOpacity={0.85}
         >
           {placing

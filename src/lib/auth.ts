@@ -3,7 +3,7 @@ import * as Linking from 'expo-linking'
 import Constants from 'expo-constants'
 import { tokenStorage } from './tokenStorage'
 import { api } from './api'
-import type { JwtUserPayload } from 'aroge-sdk'
+import type { JwtUserPayload } from '@arogenpm/sdk'
 
 WebBrowser.maybeCompleteAuthSession()
 

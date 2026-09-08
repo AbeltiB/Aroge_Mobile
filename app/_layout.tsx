@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useAppState } from '../src/context/AppContext';
 import { I18nProvider } from '../src/i18n';
 import { api } from '../src/lib/api';
-import type { Notification } from 'aroge-sdk';
+import type { Notification } from '@arogenpm/sdk';
 
 function PopupOverlay() {
   const { isAuthenticated, refreshUnread } = useAppState();

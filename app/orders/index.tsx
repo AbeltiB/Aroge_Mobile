@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors } from '../../src/lib/colors';
 import { api } from '../../src/lib/api';
-import { formatETB } from 'aroge-sdk';
-import type { Order } from 'aroge-sdk';
+import { formatETB } from '@arogenpm/sdk';
+import type { Order } from '@arogenpm/sdk';
 
 function formatStatus(status: string): string {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Paid Escrowed', 'In Escrow');

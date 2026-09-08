@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { JwtUserPayload } from 'aroge-sdk';
+import type { JwtUserPayload } from '@arogenpm/sdk';
 import { tokenStorage, type SellerProfile } from '../lib/tokenStorage';
 import { logout as authLogout } from '../lib/auth';
 import { api } from '../lib/api';

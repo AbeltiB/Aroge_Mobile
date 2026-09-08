@@ -1,1 +1,1 @@
-export { colors, type ColorKey } from 'aroge-sdk'
+export { colors, type ColorKey } from '@arogenpm/sdk'

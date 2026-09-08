@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { api } from '../src/lib/api';
 import { useAppState } from '../src/context/AppContext';
-import type { Notification } from 'aroge-sdk';
+import type { Notification } from '@arogenpm/sdk';
 
 const PAGE_SIZE = 30;
 

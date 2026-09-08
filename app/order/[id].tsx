@@ -8,8 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../src/lib/colors';
 import { api } from '../../src/lib/api';
-import { formatETB } from 'aroge-sdk';
-import type { Order, EscrowEvent, BankAccount } from 'aroge-sdk';
+import { formatETB } from '@arogenpm/sdk';
+import type { Order, EscrowEvent, BankAccount } from '@arogenpm/sdk';
 import { useAppState } from '../../src/context/AppContext';
 
 const STATUS_STEPS = [

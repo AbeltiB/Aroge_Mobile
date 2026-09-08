@@ -1,5 +1,5 @@
 import Constants from 'expo-constants'
-import type { ApiResponse } from 'aroge-sdk'
+import type { ApiResponse } from '@arogenpm/sdk'
 import { tokenStorage } from './tokenStorage'
 
 const BASE_URL: string =

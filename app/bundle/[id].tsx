@@ -7,8 +7,8 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../src/lib/colors';
 import { api } from '../../src/lib/api';
-import { formatETB } from 'aroge-sdk';
-import type { Bundle } from 'aroge-sdk';
+import { formatETB } from '@arogenpm/sdk';
+import type { Bundle } from '@arogenpm/sdk';
 import { useAppState } from '../../src/context/AppContext';
 
 export default function BundleDetailScreen() {

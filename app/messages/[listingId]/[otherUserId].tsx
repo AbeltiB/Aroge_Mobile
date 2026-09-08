@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../../src/lib/colors';
 import { api } from '../../../src/lib/api';
 import { useAppState } from '../../../src/context/AppContext';
-import type { Message } from 'aroge-sdk';
+import type { Message } from '@arogenpm/sdk';
 
 const QUICK_REPLIES = [
   'Is this still available?',

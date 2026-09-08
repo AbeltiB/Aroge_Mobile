@@ -7,9 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors } from '../../../src/lib/colors';
 import { api } from '../../../src/lib/api';
-import { formatETB } from 'aroge-sdk';
-import { ItemCondition } from 'aroge-sdk';
-import type { Listing, Category } from 'aroge-sdk';
+import { formatETB } from '@arogenpm/sdk';
+import { ItemCondition } from '@arogenpm/sdk';
+import type { Listing, Category } from '@arogenpm/sdk';
 
 interface SearchResults { items: (Listing & { category?: Category; photos?: any[] })[]; total: number }
 

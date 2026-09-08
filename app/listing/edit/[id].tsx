@@ -8,8 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../../src/lib/colors';
 import { api } from '../../../src/lib/api';
-import type { Category, Listing, ListingPhoto } from 'aroge-sdk';
-import { ItemCondition } from 'aroge-sdk';
+import type { Category, Listing, ListingPhoto } from '@arogenpm/sdk';
+import { ItemCondition } from '@arogenpm/sdk';
 
 const CONDITIONS = Object.values(ItemCondition);
 const MAX_PHOTOS = 10;

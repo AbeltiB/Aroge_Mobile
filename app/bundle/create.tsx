@@ -7,8 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors } from '../../src/lib/colors';
 import { api } from '../../src/lib/api';
-import { formatETB } from 'aroge-sdk';
-import type { Listing } from 'aroge-sdk';
+import { formatETB } from '@arogenpm/sdk';
+import type { Listing } from '@arogenpm/sdk';
 
 export default function CreateBundleScreen() {
   const router = useRouter();

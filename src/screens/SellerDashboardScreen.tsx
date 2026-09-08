@@ -7,8 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors } from '../lib/colors';
 import { api } from '../lib/api';
-import { formatETB } from 'aroge-sdk';
-import type { Listing, Order, Bundle } from 'aroge-sdk';
+import { formatETB } from '@arogenpm/sdk';
+import type { Listing, Order, Bundle } from '@arogenpm/sdk';
 import { useAppState } from '../context/AppContext';
 
 interface SellerStats {

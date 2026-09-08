@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "aroge-sdk": "^1.0.0",
+    "@arogenpm/sdk": "^1.0.0",
     "expo": "^49.0.23",
     "expo-constants": "~55.0.13",
     "expo-device": "~5.4.0",

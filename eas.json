@@ -9,14 +9,14 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "http://localhost:4000/api/v1",
-        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_telegram_bot"
+        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_ecommerce_bot"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://aroge-api.onrender.com/api/v1",
-        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_telegram_bot"
+        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_ecommerce_bot"
       }
     },
     "apk": {
@@ -26,14 +26,14 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://aroge-api.onrender.com/api/v1",
-        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_telegram_bot"
+        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_ecommerce_bot"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://aroge-api.onrender.com/api/v1",
-        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_telegram_bot"
+        "EXPO_PUBLIC_TELEGRAM_BOT_USERNAME": "aroge_ecommerce_bot"
       }
     }
   },
