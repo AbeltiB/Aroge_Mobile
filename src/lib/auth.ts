@@ -1,57 +1,41 @@
-import * as WebBrowser from 'expo-web-browser'
 import * as Linking from 'expo-linking'
-import Constants from 'expo-constants'
 import { tokenStorage } from './tokenStorage'
 import { api } from './api'
 import type { JwtUserPayload } from '@arogenpm/sdk'
 
-WebBrowser.maybeCompleteAuthSession()
+type StartResponse = { token: string; deepLink: string; expiresIn: number }
+type PollResponse =
+  | { status: 'pending' }
+  | { status: 'verified'; accessToken: string; user: JwtUserPayload }
 
-// The Telegram Login Widget requires the bot's numeric ID (from @BotFather),
-// not its @username — passing the username here silently fails auth.
-const BOT_ID: string = Constants.expoConfig?.extra?.telegramBotId ?? ''
-const LOGIN_ORIGIN: string =
-  Constants.expoConfig?.extra?.telegramLoginOrigin ?? 'https://aroge.app'
+const POLL_INTERVAL_MS = 2000
+const POLL_TIMEOUT_MS = 5 * 60 * 1000
 
+// Bot deep-link login: the user confirms inside their already-logged-in
+// Telegram app instead of Telegram's own web login screen (which falls back
+// to asking for a phone number whenever there's no active Telegram Web
+// session — this is what the old oauth.telegram.org flow hit in practice).
 export async function loginWithTelegram(): Promise<{ user: JwtUserPayload } | null> {
-  const callbackUrl = Linking.createURL('auth/callback')
+  const startRes = await api.post<StartResponse>('/auth/telegram/bot/start', { intent: 'user' })
+  if (!startRes.success) return null
 
-  const telegramAuthUrl =
-    `https://oauth.telegram.org/auth?` +
-    `bot_id=${encodeURIComponent(BOT_ID)}&` +
-    `origin=${encodeURIComponent(LOGIN_ORIGIN)}&` +
-    `return_to=${encodeURIComponent(callbackUrl)}`
+  const { token, deepLink } = startRes.data
+  await Linking.openURL(deepLink)
 
-  const result = await WebBrowser.openAuthSessionAsync(telegramAuthUrl, callbackUrl)
-  if (result.type !== 'success' || !result.url) return null
-  return handleAuthCallback(result.url)
-}
+  const deadline = Date.now() + POLL_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
 
-export async function handleAuthCallback(url: string): Promise<{ user: JwtUserPayload } | null> {
-  const parsed = Linking.parse(url)
-  const params = parsed.queryParams as Record<string, string> | undefined
-  if (!params?.hash) return null
+    const poll = await api.get<PollResponse>(`/auth/telegram/bot/poll/${token}`)
+    if (!poll.success) return null
+    if (poll.data.status === 'pending') continue
 
-  const telegramData = {
-    id: Number(params.id),
-    first_name: params.first_name ?? '',
-    last_name: params.last_name,
-    username: params.username,
-    photo_url: params.photo_url,
-    auth_date: Number(params.auth_date),
-    hash: params.hash,
+    await tokenStorage.setAccess(poll.data.accessToken)
+    await tokenStorage.setUser(poll.data.user)
+    return { user: poll.data.user }
   }
 
-  const res = await api.post<{ accessToken: string; user: JwtUserPayload }>(
-    '/auth/telegram',
-    telegramData
-  )
-
-  if (!res.success) return null
-
-  await tokenStorage.setAccess(res.data.accessToken)
-  await tokenStorage.setUser(res.data.user)
-  return { user: res.data.user }
+  return null
 }
 
 export async function logout(): Promise<void> {

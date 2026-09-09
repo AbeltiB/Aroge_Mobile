@@ -62,8 +62,6 @@
     "extra": {
       "apiUrl": "http://localhost:4000/api/v1",
       "telegramBotUsername": "aroge_ecommerce_bot",
-      "telegramBotId": "8901272644",
-      "telegramLoginOrigin": "https://aroge.app",
       "deepLinkScheme": "aroge",
       "eas": {
         "projectId": "replace-with-your-eas-project-id"
