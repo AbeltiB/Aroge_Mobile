@@ -1,18 +1,15 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { api } from './api';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Push notifications were removed from Expo Go (Android) as of SDK 53 — only
+// a real development/production build supports them. Merely importing
+// expo-notifications throws inside Expo Go (it's a module-level side
+// effect, not something triggered by calling its functions), so it can't be
+// a static top-level import here — it has to load lazily, only when we
+// already know we're not in Expo Go.
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 /**
  * Requests notification permission, fetches the device's Expo push token,
@@ -20,7 +17,20 @@ Notifications.setNotificationHandler({
  * app start for an already-logged-in user) — safe to call repeatedly.
  */
 export async function registerForPushNotifications(): Promise<void> {
+  if (isExpoGo) return;
   if (!Device.isDevice) return; // push tokens aren't available on simulators/emulators
+
+  const Notifications = await import('expo-notifications');
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
