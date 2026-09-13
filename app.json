@@ -60,8 +60,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://2.56.246.76:4000/api/v1",
-      "imgproxyUrl": "http://2.56.246.76:8080",
+      "apiUrl": "https://api.aroge.online/api/v1",
+      "imgproxyUrl": "https://media.aroge.online",
       "telegramBotUsername": "aroge_ecommerce_bot",
       "deepLinkScheme": "aroge",
       "eas": {
