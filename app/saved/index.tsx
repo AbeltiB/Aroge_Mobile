@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Heart } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, BorderRadius, Spacing } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
+import { ScreenHeader, RemoteImage, EmptyState, SkeletonRow, IconButton } from '../../src/components/ui';
 
 interface SavedRes { items: (Listing & { photos?: any[] })[]; total: number }
 
@@ -28,33 +31,41 @@ export default function SavedItemsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Saved Items</Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="Saved Items" showBack={false} bordered />
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
+        <View style={{ paddingTop: 8 }}>
+          {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+        </View>
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 12, gap: 8 }}
-          ListEmptyComponent={<Text style={styles.empty}>Items you save will show up here.</Text>}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Heart size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+              title="No saved items"
+              subtitle="Items you save will show up here"
+            />
+          }
           renderItem={({ item }) => (
             <View style={styles.row}>
-              <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }} onPress={() => router.push(`/listing/${item.id}` as any)}>
-                <View style={styles.thumb}>
-                  <Text style={{ fontSize: 24 }}>📦</Text>
-                </View>
+              <TouchableOpacity style={styles.rowMain} onPress={() => router.push(`/listing/${item.id}`)}>
+                <RemoteImage
+                  photoKey={item.photos?.find((p: any) => p.isPrimary)?.cloudinaryKey ?? item.photos?.[0]?.cloudinaryKey}
+                  style={styles.thumb}
+                  rounded={BorderRadius.md}
+                />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
                   <Text style={styles.price}>{formatETB(item.price)}</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => unsave(item.id)} style={styles.unsaveBtn}>
-                <Text style={{ fontSize: 18 }}>♥</Text>
-              </TouchableOpacity>
+              <IconButton tone="plain" onPress={() => unsave(item.id)} silent>
+                <Heart size={19} color={Colors.terracotta.primary} fill={Colors.terracotta.primary} />
+              </IconButton>
             </View>
           )}
         />
@@ -64,22 +75,15 @@ export default function SavedItemsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: colors.brand, paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.onBrand },
-  empty: {
-    textAlign: 'center', color: colors.textMuted, marginTop: 40,
-    fontSize: 14, paddingHorizontal: 32, lineHeight: 20,
-  },
+  list: { padding: Spacing[3], gap: 8 },
   row: {
-    backgroundColor: colors.surface, borderRadius: 14, padding: 12,
+    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: 1, borderColor: colors.border,
+    marginBottom: 8,
   },
-  thumb: {
-    width: 56, height: 56, borderRadius: 10,
-    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
-  },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  thumb: { width: 56, height: 56 },
   title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   price: { fontSize: 14, fontWeight: '800', color: colors.value, marginTop: 2 },
-  unsaveBtn: { padding: 8 },
 });

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { X } from 'lucide-react-native';
 import {
   BorderRadius,
   Colors,
@@ -87,7 +88,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               accessibilityLabel="Clear input"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.clearIcon}>✕</Text>
+              <X size={16} color={Colors.text.muted} />
             </TouchableOpacity>
           )}
 
@@ -148,10 +149,6 @@ const styles = StyleSheet.create({
     paddingRight: Spacing[4],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  clearIcon: {
-    fontSize: FontSize.sm,
-    color: Colors.text.muted,
   },
   error: {
     fontFamily: FontFamily.sans,

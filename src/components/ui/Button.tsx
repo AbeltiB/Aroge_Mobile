@@ -6,14 +6,14 @@ import {
   StyleSheet,
   Text,
   View,
-  StyleProp,      
-  ViewStyle,      
-  TextStyle,      
+  StyleProp,
+  ViewStyle,
+  TextStyle,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { Colors, FontFamily, FontSize, FontWeight, BorderRadius, Spacing, Shadow } from '../../constants';
+import { haptics } from '../../lib/haptics';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'telegram';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'telegram';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends Omit<PressableProps, 'style'> {
@@ -24,9 +24,9 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
-  style?: StyleProp<ViewStyle>; 
+  style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
-} // 👈 Fixed: Removed stray extra `}`
+}
 
 const variantStyles = {
   primary: {
@@ -43,6 +43,11 @@ const variantStyles = {
     container: { backgroundColor: 'transparent', borderWidth: 0 },
     pressed: { backgroundColor: Colors.cream.subtle },
     label: { color: Colors.green.primary },
+  },
+  danger: {
+    container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.error },
+    pressed: { backgroundColor: 'rgba(192,57,43,0.08)' },
+    label: { color: Colors.error },
   },
   telegram: {
     container: { backgroundColor: Colors.telegram, borderWidth: 0 },
@@ -67,8 +72,8 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = true,
   onPress,
   disabled,
-  style: customStyle,        // 👈 Destructure & rename
-  textStyle: customTextStyle,// 👈 Destructure & rename
+  style: customStyle,
+  textStyle: customTextStyle,
   ...rest
 }) => {
   const variantStyle = variantStyles[variant];
@@ -76,13 +81,14 @@ export const Button: React.FC<ButtonProps> = ({
 
   const handlePress = useCallback(
     (event: Parameters<NonNullable<PressableProps['onPress']>>[0]) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptics.tap();
       onPress?.(event);
     },
     [onPress],
   );
 
   const isDisabled = disabled || loading;
+  const hasShadow = variant === 'primary' || variant === 'telegram';
 
   return (
     <Pressable
@@ -92,10 +98,11 @@ export const Button: React.FC<ButtonProps> = ({
         styles.base,
         sizeStyle.container,
         variantStyle.container,
+        hasShadow && Shadow.sm,
         fullWidth && styles.fullWidth,
         pressed && !isDisabled && variantStyle.pressed,
         isDisabled && styles.disabled,
-        customStyle, // 👈 Merges your passed style prop
+        customStyle,
       ]}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -103,20 +110,12 @@ export const Button: React.FC<ButtonProps> = ({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variantStyle.label.color}
-          size="small" // 👈 Simplified: both branches were 'small' anyway
-        />
+        <ActivityIndicator color={variantStyle.label.color} size="small" />
       ) : (
         <View style={[styles.content, { gap: sizeStyle.gap }]}>
           {icon && iconPosition === 'left' && icon}
           <Text
-            style={[
-              styles.label,
-              sizeStyle.label,
-              variantStyle.label,
-              customTextStyle, // 👈 Applied textStyle
-            ]}
+            style={[styles.label, sizeStyle.label, variantStyle.label, customTextStyle]}
             numberOfLines={1}
           >
             {label}
@@ -133,7 +132,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadow.sm,
   },
   fullWidth: {
     width: '100%',

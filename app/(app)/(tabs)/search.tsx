@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, TextInput, Modal, ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Search as SearchIcon, SlidersHorizontal, PackageSearch } from 'lucide-react-native';
 import { colors } from '../../../src/lib/colors';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import { ItemCondition } from '@arogenpm/sdk';
 import type { Listing, Category } from '@arogenpm/sdk';
+import { RemoteImage, Input, EmptyState, SkeletonRow, Chip, BottomSheet, Button } from '../../../src/components/ui';
 
-interface SearchResults { items: (Listing & { category?: Category; photos?: any[] })[]; total: number }
+interface SearchResults { items: (Listing & { category?: Category; photos?: { cloudinaryKey: string; isPrimary?: boolean }[] })[]; total: number }
 
 const CONDITIONS = Object.values(ItemCondition);
 const SORTS = [
@@ -81,58 +81,59 @@ export default function SearchScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Search</Text>
       </View>
 
       <View style={styles.searchRow}>
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
+        <View style={{ flex: 1 }}>
+          <Input
             placeholder="Search listings…"
             value={query}
-            onChangeText={setQuery}
+            onChangeText={(v) => { setQuery(v); if (!v) { setResults([]); setSearched(false); } }}
             onSubmitEditing={() => runSearch()}
             returnKeyType="search"
             autoFocus
-            placeholderTextColor={colors.textMuted}
+            clearable
+            leftElement={<SearchIcon size={17} color={Colors.text.muted} />}
           />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
-              <Text style={{ color: colors.textMuted, fontSize: 14, paddingRight: 12 }}>✕</Text>
-            </TouchableOpacity>
-          )}
         </View>
         <TouchableOpacity style={styles.filterBtn} onPress={openFilters}>
-          <Text style={styles.filterBtnText}>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</Text>
+          <SlidersHorizontal size={16} color={colors.brand} />
+          {activeFilterCount > 0 && (
+            <View style={styles.filterCount}>
+              <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
+        <View style={{ paddingTop: 8 }}>
+          {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+        </View>
       ) : (
         <FlatList
           data={results}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 12, gap: 8 }}
+          contentContainerStyle={styles.list}
           ListEmptyComponent={
-            searched ? (
-              <Text style={styles.empty}>No listings found. Try adjusting your search or filters.</Text>
-            ) : (
-              <Text style={styles.empty}>Search for items, or use filters to browse</Text>
-            )
+            <EmptyState
+              icon={<PackageSearch size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+              title={searched ? 'No listings found' : 'Find something great'}
+              subtitle={searched ? 'Try adjusting your search or filters' : 'Search for items, or use filters to browse'}
+            />
           }
           renderItem={({ item }) => {
             const photo = item.photos?.find((p) => p.isPrimary) ?? item.photos?.[0];
             return (
               <TouchableOpacity
                 style={styles.row}
-                onPress={() => router.push(`/listing/${item.id}` as any)}
+                onPress={() => router.push(`/listing/${item.id}`)}
+                activeOpacity={0.85}
               >
-                <View style={styles.thumb}>
-                  <Text style={{ fontSize: 24 }}>📦</Text>
-                </View>
+                <RemoteImage photoKey={photo?.cloudinaryKey} style={styles.thumb} rounded={BorderRadius.md} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
                   <Text style={styles.price}>{formatETB(item.price)}</Text>
@@ -144,136 +145,107 @@ export default function SearchScreen() {
         />
       )}
 
-      <Modal visible={filterModalVisible} transparent animationType="slide" onRequestClose={() => setFilterModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Filters</Text>
-            <ScrollView style={{ maxHeight: 420 }}>
-              <Text style={styles.filterLabel}>Condition</Text>
-              <View style={styles.chipRow}>
-                {['', ...CONDITIONS].map((c) => (
-                  <TouchableOpacity
-                    key={c || 'ANY'}
-                    style={[styles.chip, draftFilters.condition === c && styles.chipActive]}
-                    onPress={() => setDraftFilters((f) => ({ ...f, condition: c }))}
-                  >
-                    <Text style={[styles.chipText, draftFilters.condition === c && styles.chipTextActive]}>
-                      {c ? c.replace('_', ' ') : 'Any'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+      <BottomSheet visible={filterModalVisible} onClose={() => setFilterModalVisible(false)} title="Filters">
+        <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+          <Text style={styles.filterLabel}>Condition</Text>
+          <View style={styles.chipRow}>
+            {['', ...CONDITIONS].map((c) => (
+              <Chip
+                key={c || 'ANY'}
+                label={c ? c.replace('_', ' ') : 'Any'}
+                selected={draftFilters.condition === c}
+                onPress={() => setDraftFilters((f) => ({ ...f, condition: c }))}
+              />
+            ))}
+          </View>
 
-              <Text style={styles.filterLabel}>Price Range (ETB)</Text>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TextInput
-                  style={[styles.priceInput, { flex: 1 }]}
-                  placeholder="Min"
-                  keyboardType="numeric"
-                  value={draftFilters.minPrice}
-                  onChangeText={(v) => setDraftFilters((f) => ({ ...f, minPrice: v }))}
-                  placeholderTextColor={colors.textMuted}
-                />
-                <TextInput
-                  style={[styles.priceInput, { flex: 1 }]}
-                  placeholder="Max"
-                  keyboardType="numeric"
-                  value={draftFilters.maxPrice}
-                  onChangeText={(v) => setDraftFilters((f) => ({ ...f, maxPrice: v }))}
-                  placeholderTextColor={colors.textMuted}
-                />
-              </View>
-
-              <Text style={styles.filterLabel}>Seller Type</Text>
-              <View style={styles.chipRow}>
-                {SELLER_TYPES.map((s) => (
-                  <TouchableOpacity
-                    key={s.key || 'ANY'}
-                    style={[styles.chip, draftFilters.sellerType === s.key && styles.chipActive]}
-                    onPress={() => setDraftFilters((f) => ({ ...f, sellerType: s.key }))}
-                  >
-                    <Text style={[styles.chipText, draftFilters.sellerType === s.key && styles.chipTextActive]}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.filterLabel}>Sort By</Text>
-              <View style={styles.chipRow}>
-                {SORTS.map((s) => (
-                  <TouchableOpacity
-                    key={s.key || 'DEFAULT'}
-                    style={[styles.chip, draftFilters.sort === s.key && styles.chipActive]}
-                    onPress={() => setDraftFilters((f) => ({ ...f, sort: s.key }))}
-                  >
-                    <Text style={[styles.chipText, draftFilters.sort === s.key && styles.chipTextActive]}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={clearFilters}>
-                <Text style={styles.modalCancelText}>Clear All</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSend} onPress={applyFilters}>
-                <Text style={styles.modalSendText}>Apply Filters</Text>
-              </TouchableOpacity>
+          <Text style={styles.filterLabel}>Price Range (ETB)</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Input
+                placeholder="Min"
+                keyboardType="numeric"
+                value={draftFilters.minPrice}
+                onChangeText={(v) => setDraftFilters((f) => ({ ...f, minPrice: v }))}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input
+                placeholder="Max"
+                keyboardType="numeric"
+                value={draftFilters.maxPrice}
+                onChangeText={(v) => setDraftFilters((f) => ({ ...f, maxPrice: v }))}
+              />
             </View>
           </View>
-        </View>
-      </Modal>
+
+          <Text style={styles.filterLabel}>Seller Type</Text>
+          <View style={styles.chipRow}>
+            {SELLER_TYPES.map((s) => (
+              <Chip
+                key={s.key || 'ANY'}
+                label={s.label}
+                selected={draftFilters.sellerType === s.key}
+                onPress={() => setDraftFilters((f) => ({ ...f, sellerType: s.key }))}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.filterLabel}>Sort By</Text>
+          <View style={styles.chipRow}>
+            {SORTS.map((s) => (
+              <Chip
+                key={s.key || 'DEFAULT'}
+                label={s.label}
+                selected={draftFilters.sort === s.key}
+                onPress={() => setDraftFilters((f) => ({ ...f, sort: s.key }))}
+              />
+            ))}
+          </View>
+
+          <View style={styles.modalActions}>
+            <View style={{ flex: 1 }}>
+              <Button label="Clear All" variant="ghost" onPress={clearFilters} />
+            </View>
+            <View style={{ flex: 1.4 }}>
+              <Button label="Apply Filters" variant="primary" onPress={applyFilters} />
+            </View>
+          </View>
+        </ScrollView>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.canvas },
   header: { backgroundColor: colors.brand, paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.onBrand },
+  headerTitle: { fontFamily: FontFamily.serif, fontSize: 22, fontWeight: '700', color: colors.onBrand },
   searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginVertical: 8, gap: 8 },
-  searchBar: {
-    flex: 1, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: 12,
-    borderWidth: 1.5, borderColor: colors.border,
-  },
-  searchInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.textPrimary },
   filterBtn: {
-    backgroundColor: colors.brandTint, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 11,
+    backgroundColor: colors.brandTint, borderRadius: BorderRadius.lg,
+    width: 52, height: 52, alignItems: 'center', justifyContent: 'center',
+    position: 'relative',
   },
-  filterBtnText: { color: colors.brand, fontSize: 13, fontWeight: '700' },
-  empty: { textAlign: 'center', color: colors.textMuted, marginTop: 40, fontSize: 14, paddingHorizontal: 32, lineHeight: 20 },
+  filterCount: {
+    position: 'absolute', top: -4, right: -4,
+    backgroundColor: Colors.terracotta.primary, borderRadius: 9,
+    minWidth: 18, height: 18, paddingHorizontal: 3,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  filterCountText: { fontSize: 10, fontWeight: '700', color: '#ffffff' },
+  list: { padding: 12, gap: 8 },
   row: {
-    backgroundColor: colors.surface, borderRadius: 14, padding: 12,
+    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderWidth: 1, borderColor: colors.border,
+    marginBottom: 8,
   },
-  thumb: { width: 56, height: 56, borderRadius: 10, backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center' },
+  thumb: { width: 56, height: 56 },
   title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  price: { fontSize: 14, fontWeight: '800', color: colors.value, marginTop: 2 },
+  price: { fontFamily: FontFamily.serif, fontSize: 14, fontWeight: FontWeight.bold, color: colors.value, marginTop: 2 },
   meta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: {
-    backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, gap: 14,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  filterLabel: { fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 12, marginBottom: 8 },
+  filterLabel: { fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: Spacing[4], marginBottom: Spacing[2] },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
-    backgroundColor: colors.brandTint, borderWidth: 1, borderColor: 'transparent',
-  },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
-  chipText: { fontSize: 12, color: colors.brandDeep, fontWeight: '500' },
-  chipTextActive: { color: colors.onBrand },
-  priceInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
-    color: colors.textPrimary, backgroundColor: colors.canvas,
-  },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  modalCancel: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: colors.brandTint, alignItems: 'center' },
-  modalCancelText: { color: colors.brand, fontWeight: '600', fontSize: 14 },
-  modalSend: { flex: 1.5, paddingVertical: 13, borderRadius: 12, backgroundColor: colors.action, alignItems: 'center' },
-  modalSendText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: Spacing[6], marginBottom: Spacing[2] },
 });

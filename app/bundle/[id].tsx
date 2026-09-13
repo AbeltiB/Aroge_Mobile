@@ -1,15 +1,15 @@
 import { useCallback, useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gift } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Bundle } from '@arogenpm/sdk';
 import { useAppState } from '../../src/context/AppContext';
+import { ScreenHeader, Card, Avatar, Button, EmptyState, RemoteImage } from '../../src/components/ui';
 
 export default function BundleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,18 +29,12 @@ export default function BundleDetailScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  if (loading) {
+  if (loading || !bundle) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas }}>
-        <ActivityIndicator color={colors.brand} />
-      </View>
-    );
-  }
-
-  if (!bundle) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas }}>
-        <Text style={{ color: colors.textMuted }}>Bundle not found</Text>
+      <View style={styles.centered}>
+        {!loading && (
+          <EmptyState icon={<Gift size={28} color={Colors.text.muted} strokeWidth={1.5} />} title="Bundle not found" />
+        )}
       </View>
     );
   }
@@ -67,14 +61,8 @@ export default function BundleDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bundle</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="Bundle" tone="brand" bordered />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.priceCard}>
@@ -87,7 +75,7 @@ export default function BundleDetailScreen() {
 
         {bundle.seller && (
           <View style={styles.sellerRow}>
-            <View style={styles.sellerAvatar}><Text style={{ fontSize: 18 }}>👤</Text></View>
+            <Avatar name={bundle.seller.name} size={40} />
             <View>
               <Text style={styles.sellerName}>{bundle.seller.name}</Text>
               {bundle.seller.verified && <Text style={styles.verified}>✓ Verified</Text>}
@@ -96,14 +84,14 @@ export default function BundleDetailScreen() {
         )}
 
         <Text style={styles.sectionTitle}>{items.length} Items in this Bundle</Text>
-        <View style={styles.itemsCard}>
+        <Card padded={false} style={styles.itemsCard}>
           {items.map((it, i) => (
             <TouchableOpacity
               key={it.listingId}
               style={[styles.itemRow, i > 0 && styles.itemRowBorder]}
-              onPress={() => router.push(`/listing/${it.listingId}` as any)}
+              onPress={() => router.push(`/listing/${it.listingId}`)}
             >
-              <View style={styles.itemThumb}><Text style={{ fontSize: 18 }}>📦</Text></View>
+              <RemoteImage photoKey={(it.listing as any)?.photos?.[0]?.cloudinaryKey} style={styles.itemThumb} rounded={BorderRadius.sm} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.itemTitle} numberOfLines={1}>{it.listing?.title ?? 'Listing'}</Text>
                 <Text style={styles.itemMeta}>{it.listing?.condition}</Text>
@@ -111,33 +99,25 @@ export default function BundleDetailScreen() {
               <Text style={styles.itemPrice}>{formatETB(it.listing?.price ?? 0)}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </Card>
       </ScrollView>
 
       <View style={styles.footer}>
         {isOwner ? (
-          <TouchableOpacity
-            style={[styles.cancelBtn, cancelling && { opacity: 0.6 }]}
-            onPress={handleCancel}
+          <Button
+            label={bundle.status === 'ACTIVE' ? 'Cancel Bundle' : `Bundle ${bundle.status}`}
+            variant="danger"
+            loading={cancelling}
             disabled={cancelling || bundle.status !== 'ACTIVE'}
-          >
-            {cancelling
-              ? <ActivityIndicator color={colors.action} size="small" />
-              : <Text style={styles.cancelBtnText}>
-                  {bundle.status === 'ACTIVE' ? 'Cancel Bundle' : `Bundle ${bundle.status}`}
-                </Text>}
-          </TouchableOpacity>
+            onPress={handleCancel}
+          />
         ) : (
-          <TouchableOpacity
-            style={[styles.buyBtn, bundle.status !== 'ACTIVE' && { opacity: 0.5 }]}
+          <Button
+            label={bundle.status === 'ACTIVE' ? 'Buy Bundle' : 'No Longer Available'}
+            variant="primary"
             disabled={bundle.status !== 'ACTIVE'}
-            onPress={() => router.push(`/checkout/${bundle.id}?type=bundle` as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.buyBtnText}>
-              {bundle.status === 'ACTIVE' ? 'Buy Bundle' : 'No Longer Available'}
-            </Text>
-          </TouchableOpacity>
+            onPress={() => router.push(`/checkout/${bundle.id}?type=bundle`)}
+          />
         )}
       </View>
     </SafeAreaView>
@@ -145,39 +125,26 @@ export default function BundleDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.brand,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  backBtn: { width: 36, alignItems: 'flex-start' },
-  backText: { color: colors.onBrand, fontSize: 20 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas },
   scroll: { padding: 16, gap: 14, paddingBottom: 40 },
   priceCard: {
-    backgroundColor: colors.brand, borderRadius: 16, padding: 20, alignItems: 'center',
+    backgroundColor: colors.brand, borderRadius: BorderRadius.xl, padding: 20, alignItems: 'center',
   },
   priceLabel: { fontSize: 11, fontWeight: '700', color: 'rgba(243,239,231,0.6)', letterSpacing: 1.2, textTransform: 'uppercase' },
-  priceValue: { fontSize: 30, fontWeight: '900', color: colors.value, marginVertical: 4 },
+  priceValue: { fontFamily: FontFamily.serif, fontSize: FontSize['2xl'], fontWeight: FontWeight.bold, color: colors.value, marginVertical: 4 },
   savings: { fontSize: 12, color: 'rgba(243,239,231,0.75)' },
   sellerRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 12, backgroundColor: colors.surface, borderRadius: 12,
-  },
-  sellerAvatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.brandTint, justifyContent: 'center', alignItems: 'center',
+    padding: 12, backgroundColor: colors.surface, borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: colors.border,
   },
   sellerName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   verified: { fontSize: 11, color: colors.brand, marginTop: 1 },
   sectionTitle: { fontSize: 13, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.8 },
-  itemsCard: { backgroundColor: colors.surface, borderRadius: 14, overflow: 'hidden' },
-  itemRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
+  itemsCard: { overflow: 'hidden' },
+  itemRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: Spacing[3] },
   itemRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-  itemThumb: {
-    width: 36, height: 36, borderRadius: 8,
-    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
-  },
+  itemThumb: { width: 36, height: 36 },
   itemTitle: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   itemMeta: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
   itemPrice: { fontSize: 13, fontWeight: '700', color: colors.value },
@@ -185,14 +152,4 @@ const styles = StyleSheet.create({
     padding: 16, backgroundColor: colors.surface,
     borderTopWidth: 1, borderTopColor: colors.border,
   },
-  buyBtn: {
-    backgroundColor: colors.action, borderRadius: 14,
-    paddingVertical: 15, alignItems: 'center',
-  },
-  buyBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
-  cancelBtn: {
-    backgroundColor: 'rgba(184,92,42,0.10)', borderRadius: 14,
-    paddingVertical: 15, alignItems: 'center',
-  },
-  cancelBtnText: { color: colors.action, fontSize: 15, fontWeight: '700' },
 });

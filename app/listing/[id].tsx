@@ -1,14 +1,23 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, Image, Modal, TextInput,
+  ActivityIndicator, Alert, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeft, MoreHorizontal, Heart, MapPin, ChevronRight, PackageSearch } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
+import { RemoteImage, IconButton, Badge, Avatar, EmptyState, BottomSheet, Input, Button } from '../../src/components/ui';
+import { haptics } from '../../src/lib/haptics';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CONDITION_LABELS: Record<string, string> = {
+  NEW: 'New', LIKE_NEW: 'Like New', GOOD: 'Good', FAIR: 'Fair', POOR: 'Poor',
+};
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,8 +27,12 @@ export default function ListingDetailScreen() {
   const [offerAmount, setOfferAmount] = useState('');
   const [sendingOffer, setSendingOffer] = useState(false);
   const [offerModalVisible, setOfferModalVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [sendingReport, setSendingReport] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savePending, setSavePending] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -34,6 +47,7 @@ export default function ListingDetailScreen() {
 
   async function toggleSave() {
     if (!listing || savePending) return;
+    haptics.tap();
     setSavePending(true);
     const wasSaved = saved;
     setSaved(!wasSaved);
@@ -44,35 +58,25 @@ export default function ListingDetailScreen() {
     setSavePending(false);
   }
 
-  function showMoreMenu() {
-    Alert.alert('More Options', undefined, [
-      {
-        text: 'Report Listing',
-        onPress: () => {
-          Alert.prompt(
-            'Report Listing',
-            'What\'s wrong with this listing?',
-            async (reason) => {
-              if (!reason || reason.trim().length < 5) return;
-              const res = await api.post('/reports', {
-                targetType: 'LISTING',
-                targetId: id,
-                reason: reason.trim(),
-              });
-              Alert.alert(res.success ? 'Reported' : 'Error', res.success
-                ? 'Thanks — our team will review this.'
-                : (res as any).message ?? 'Could not submit report');
-            }
-          );
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  async function submitReport() {
+    if (reportReason.trim().length < 5) return;
+    setSendingReport(true);
+    const res = await api.post('/reports', {
+      targetType: 'LISTING',
+      targetId: id,
+      reason: reportReason.trim(),
+    });
+    setSendingReport(false);
+    setReportModalVisible(false);
+    setReportReason('');
+    Alert.alert(res.success ? 'Reported' : 'Error', res.success
+      ? 'Thanks — our team will review this.'
+      : (res as any).message ?? 'Could not submit report');
   }
 
   function handleBuyNow() {
     if (!listing) return;
-    router.push(`/checkout/${listing.id}` as any);
+    router.push(`/checkout/${listing.id}`);
   }
 
   async function handleMakeOffer() {
@@ -83,15 +87,21 @@ export default function ListingDetailScreen() {
     });
     setSendingOffer(false);
     if (res.success) {
+      setOfferModalVisible(false);
+      setOfferAmount('');
       Alert.alert('Offer Sent', 'The seller will respond within 48 hours.');
     } else {
       Alert.alert('Error', (res as any).message ?? 'Could not send offer');
     }
   }
 
+  function onPhotoScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH));
+  }
+
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas }}>
+      <View style={styles.centered}>
         <ActivityIndicator color={colors.brand} />
       </View>
     );
@@ -99,39 +109,48 @@ export default function ListingDetailScreen() {
 
   if (!listing) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas }}>
-        <Text style={{ color: colors.textMuted }}>Listing not found</Text>
+      <View style={styles.centered}>
+        <EmptyState icon={<PackageSearch size={28} color={Colors.text.muted} strokeWidth={1.5} />} title="Listing not found" />
       </View>
     );
   }
 
-  const primaryPhoto = listing.photos?.find((p: any) => p.isPrimary) ?? listing.photos?.[0];
+  const photos = listing.photos && listing.photos.length > 0 ? listing.photos : [undefined];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <ScrollView>
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <ScrollView bounces={false}>
         <View style={styles.photoContainer}>
-          {primaryPhoto ? (
-            <Image
-              source={{ uri: `https://res.cloudinary.com/demo/image/upload/${primaryPhoto.cloudinaryKey}` }}
-              style={styles.photo}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.photo, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.brandTint }]}>
-              <Text style={{ color: colors.textMuted, fontSize: 40 }}>📦</Text>
+          <FlatList
+            data={photos}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onPhotoScroll}
+            keyExtractor={(_, i) => String(i)}
+            renderItem={({ item }) => (
+              <RemoteImage photoKey={item?.cloudinaryKey} preset="hero" style={styles.photo} />
+            )}
+          />
+
+          {photos.length > 1 && (
+            <View style={styles.dots}>
+              {photos.map((_, i) => (
+                <View key={i} style={[styles.dot, i === photoIndex && styles.dotActive]} />
+              ))}
             </View>
           )}
-          <TouchableOpacity style={styles.floatingBackBtn} onPress={() => router.back()}>
-            <Text style={styles.floatingIconText}>←</Text>
-          </TouchableOpacity>
+
+          <IconButton tone="floating" style={styles.floatingBack} onPress={() => router.back()} silent>
+            <ChevronLeft size={20} color="#fff" />
+          </IconButton>
           <View style={styles.floatingRightRow}>
-            <TouchableOpacity style={styles.floatingIconBtn} onPress={showMoreMenu}>
-              <Text style={styles.floatingIconText}>⋯</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.floatingIconBtn} onPress={toggleSave} disabled={savePending}>
-              <Text style={styles.floatingIconText}>{saved ? '♥' : '♡'}</Text>
-            </TouchableOpacity>
+            <IconButton tone="floating" onPress={() => setReportModalVisible(true)}>
+              <MoreHorizontal size={20} color="#fff" />
+            </IconButton>
+            <IconButton tone="floating" onPress={toggleSave} disabled={savePending} silent>
+              <Heart size={19} color="#fff" fill={saved ? '#fff' : 'transparent'} />
+            </IconButton>
           </View>
         </View>
 
@@ -140,201 +159,119 @@ export default function ListingDetailScreen() {
           <Text style={styles.price}>{formatETB(listing.price)}</Text>
 
           <View style={styles.tags}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{listing.condition}</Text>
-            </View>
-            {listing.negotiable && (
-              <View style={[styles.tag, { backgroundColor: colors.valueTint }]}>
-                <Text style={[styles.tagText, { color: colors.valueText }]}>Negotiable</Text>
-              </View>
-            )}
+            <Badge label={CONDITION_LABELS[listing.condition] ?? listing.condition} tone="brand" />
+            {listing.negotiable && <Badge label="Negotiable" tone="gold" />}
             {listing.city && (
-              <View style={styles.tag}>
-                <Text style={styles.tagText}>📍 {listing.city}</Text>
-              </View>
+              <Badge label={listing.city} tone="neutral" icon={<MapPin size={11} color={Colors.text.secondary} />} />
             )}
           </View>
 
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>{listing.description}</Text>
 
-          {(listing as any).seller && (
+          {listing.seller && (
             <TouchableOpacity
               style={styles.sellerRow}
-              onPress={() => router.push(`/seller/${(listing as any).seller.id}` as any)}
+              onPress={() => router.push(`/seller/${listing.seller.id}`)}
               activeOpacity={0.7}
             >
-              <View style={styles.sellerAvatar}>
-                <Text style={{ fontSize: 18 }}>👤</Text>
-              </View>
+              <Avatar photoKey={listing.seller.avatarKey} name={listing.seller.name} size={44} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.sellerName}>{(listing as any).seller.name}</Text>
-                {(listing as any).seller.verified && (
-                  <Text style={styles.verified}>✓ Verified</Text>
-                )}
+                <Text style={styles.sellerName}>{listing.seller.name}</Text>
+                {listing.seller.verified && <Text style={styles.verified}>✓ Verified seller</Text>}
               </View>
-              <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
+              <ChevronRight size={18} color={Colors.text.muted} />
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.buyBtn} onPress={handleBuyNow} activeOpacity={0.85}>
-          <Text style={styles.buyBtnText}>Buy Now</Text>
-        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Button label="Buy Now" variant="primary" onPress={handleBuyNow} />
+        </View>
         {listing.negotiable && (
-          <TouchableOpacity
-            style={styles.offerBtn}
-            onPress={() => setOfferModalVisible(true)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.offerBtnText}>Make Offer</Text>
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Button label="Make Offer" variant="secondary" onPress={() => setOfferModalVisible(true)} />
+          </View>
         )}
       </View>
 
-      {/* Offer modal */}
-      <Modal visible={offerModalVisible} transparent animationType="slide" onRequestClose={() => setOfferModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Make an Offer</Text>
-            <Text style={styles.modalSub}>Listing price: {formatETB(listing.price)}</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Your offer amount (ETB)"
-              keyboardType="numeric"
-              value={offerAmount}
-              onChangeText={setOfferAmount}
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setOfferModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSend, sendingOffer && { opacity: 0.6 }]}
-                disabled={sendingOffer || !offerAmount}
-                onPress={async () => {
-                  await handleMakeOffer();
-                  setOfferModalVisible(false);
-                  setOfferAmount('');
-                }}
-              >
-                {sendingOffer
-                  ? <ActivityIndicator color={colors.onAction} size="small" />
-                  : <Text style={styles.modalSendText}>Send Offer</Text>
-                }
-              </TouchableOpacity>
-            </View>
-          </View>
+      <BottomSheet visible={offerModalVisible} onClose={() => setOfferModalVisible(false)} title="Make an Offer">
+        <Text style={styles.modalSub}>Listing price: {formatETB(listing.price)}</Text>
+        <View style={{ marginTop: Spacing[3], marginBottom: Spacing[5] }}>
+          <Input
+            placeholder="Your offer amount (ETB)"
+            keyboardType="numeric"
+            value={offerAmount}
+            onChangeText={setOfferAmount}
+            autoFocus
+          />
         </View>
-      </Modal>
+        <Button
+          label="Send Offer"
+          variant="primary"
+          loading={sendingOffer}
+          disabled={!offerAmount}
+          onPress={handleMakeOffer}
+        />
+      </BottomSheet>
+
+      <BottomSheet visible={reportModalVisible} onClose={() => setReportModalVisible(false)} title="Report Listing">
+        <Text style={styles.modalSub}>What&apos;s wrong with this listing?</Text>
+        <View style={{ marginTop: Spacing[3], marginBottom: Spacing[5] }}>
+          <Input
+            placeholder="Tell us what's wrong…"
+            value={reportReason}
+            onChangeText={setReportReason}
+            multiline
+            numberOfLines={3}
+            style={{ height: 90, paddingTop: 12, textAlignVertical: 'top' }}
+            autoFocus
+          />
+        </View>
+        <Button
+          label="Submit Report"
+          variant="danger"
+          loading={sendingReport}
+          disabled={reportReason.trim().length < 5}
+          onPress={submitReport}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  photoContainer: { height: 280, backgroundColor: colors.brandTint },
-  photo: { width: '100%', height: '100%' },
-  floatingBackBtn: {
-    position: 'absolute', top: 16, left: 16,
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center',
+  root: { flex: 1, backgroundColor: colors.canvas },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas },
+  photoContainer: { height: 340, backgroundColor: Colors.green.tint },
+  photo: { width: SCREEN_WIDTH, height: 340 },
+  dots: {
+    position: 'absolute', bottom: 14, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'center', gap: 5,
   },
-  floatingRightRow: {
-    position: 'absolute', top: 16, right: 16,
-    flexDirection: 'row', gap: 8,
-  },
-  floatingIconBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center',
-  },
-  floatingIconText: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  content: { padding: 20, gap: 8 },
-  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
-  price: { fontSize: 24, fontWeight: '800', color: colors.value },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
+  dotActive: { backgroundColor: '#fff', width: 16 },
+  floatingBack: { position: 'absolute', top: 12, left: 12 },
+  floatingRightRow: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', gap: 8 },
+  content: { padding: 20, gap: Spacing[2] },
+  title: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: colors.textPrimary },
+  price: { fontFamily: FontFamily.serif, fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: colors.value },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  tag: {
-    backgroundColor: colors.brandTint,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  tagText: { fontSize: 12, color: colors.brandDeep, fontWeight: '500' },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 8,
-  },
-  description: { fontSize: 14, color: colors.textBody, lineHeight: 20 },
+  sectionTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: colors.textPrimary, marginTop: Spacing[2] },
+  description: { fontSize: FontSize.sm, color: colors.textBody, lineHeight: FontSize.sm * 1.5 },
   sellerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 8,
-    padding: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing[3],
+    marginTop: Spacing[2], padding: Spacing[3],
+    backgroundColor: colors.surface, borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: colors.border,
   },
-  sellerAvatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.brandTint,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  sellerName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  verified: { fontSize: 11, color: colors.brand, marginTop: 1 },
+  sellerName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: colors.textPrimary },
+  verified: { fontSize: FontSize.xs, color: colors.brand, marginTop: 1 },
   footer: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    flexDirection: 'row', gap: Spacing[3], padding: Spacing[4],
+    backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
   },
-  buyBtn: {
-    flex: 1,
-    backgroundColor: colors.action,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  buyBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
-  offerBtn: {
-    flex: 1,
-    backgroundColor: colors.brandTint,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  offerBtnText: { color: colors.brand, fontSize: 15, fontWeight: '600' },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, gap: 12,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  modalSub: { fontSize: 13, color: colors.textMuted },
-  modalInput: {
-    borderWidth: 1.5, borderColor: colors.border,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 16, color: colors.textPrimary,
-    backgroundColor: colors.canvas,
-  },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  modalCancel: {
-    flex: 1, paddingVertical: 13, borderRadius: 12,
-    backgroundColor: colors.brandTint, alignItems: 'center',
-  },
-  modalCancelText: { color: colors.brand, fontWeight: '600', fontSize: 14 },
-  modalSend: {
-    flex: 1.5, paddingVertical: 13, borderRadius: 12,
-    backgroundColor: colors.action, alignItems: 'center',
-  },
-  modalSendText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
+  modalSub: { fontSize: FontSize.sm, color: colors.textMuted },
 });

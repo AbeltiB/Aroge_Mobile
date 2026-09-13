@@ -1,12 +1,22 @@
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { colors } from '../../src/lib/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Send, ShieldCheck, BadgeCheck, Zap } from 'lucide-react-native';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius, LetterSpacing } from '../../src/constants';
+import { Button } from '../../src/components/ui';
 import { loginWithTelegram } from '../../src/lib/auth';
 import { useAppState } from '../../src/context/AppContext';
 
+const VALUE_PROPS = [
+  { Icon: ShieldCheck, text: 'Every payment protected by escrow' },
+  { Icon: BadgeCheck, text: 'Verified sellers and trusted badges' },
+  { Icon: Zap, text: 'Sign in instantly with Telegram' },
+] as const;
+
 export default function LoginScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { login } = useAppState();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,7 +28,7 @@ export default function LoginScreen() {
       const result = await loginWithTelegram();
       if (result) {
         login(result.user);
-        router.replace('/(app)');
+        router.replace('/(app)/(tabs)');
         return;
       }
       setError('Login cancelled or failed. Please try again.');
@@ -30,100 +40,137 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Aroge</Text>
-        <Text style={styles.subtitle}>አሮጌ — Ethiopia&apos;s Pre-Loved Marketplace</Text>
-      </View>
+    <View style={styles.root}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + Spacing[10], paddingBottom: insets.bottom + Spacing[6] }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.hero}>
+          <View style={styles.markBackdrop}>
+            {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
+            <Image source={require('../../assets/adaptive-icon.png')} style={styles.mark} resizeMode="contain" />
+          </View>
+          <Text style={styles.wordmark}>AROGE</Text>
+          <Text style={styles.subtitle}>አሮጌ — Ethiopia&apos;s Pre-Loved Marketplace</Text>
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Get Started</Text>
-        <Text style={styles.cardBody}>
-          Buy and sell pre-loved items securely with Aroge Escrow.
-        </Text>
+        <View style={styles.values}>
+          {VALUE_PROPS.map(({ Icon, text }) => (
+            <View key={text} style={styles.valueRow}>
+              <View style={styles.valueIcon}>
+                <Icon size={16} color={Colors.green.primary} strokeWidth={2} />
+              </View>
+              <Text style={styles.valueText}>{text}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
 
+      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing[5] }]}>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <TouchableOpacity
-          style={[styles.telegramBtn, loading && styles.disabled]}
+        <Button
+          label={loading ? 'Connecting…' : 'Continue with Telegram'}
+          variant="telegram"
+          loading={loading}
           onPress={handleTelegramLogin}
-          disabled={loading}
-          activeOpacity={0.85}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.onAction} size="small" />
-          ) : (
-            <Text style={styles.telegramBtnText}>Continue with Telegram</Text>
-          )}
-        </TouchableOpacity>
+          size="lg"
+          icon={!loading ? <Send size={18} color="#ffffff" /> : undefined}
+        />
+
+        <Text style={styles.legal}>
+          By continuing, you agree to Aroge&apos;s Terms of Service and acknowledge our Privacy Policy.
+        </Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: colors.canvas,
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: Colors.cream.background,
   },
-  header: {
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing[6],
+  },
+  hero: {
     alignItems: 'center',
-    marginBottom: 40,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: colors.brand,
-    letterSpacing: -1,
+  markBackdrop: {
+    width: 148,
+    height: 148,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.cream.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing[6],
+    shadowColor: Colors.green.dark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  mark: {
+    width: 96,
+    height: 96,
+  },
+  wordmark: {
+    fontFamily: FontFamily.serif,
+    fontSize: FontSize['3xl'],
+    fontWeight: FontWeight.bold,
+    color: Colors.green.primary,
+    letterSpacing: LetterSpacing.widest,
   },
   subtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 4,
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.sm,
+    color: Colors.text.muted,
+    marginTop: Spacing[2],
     textAlign: 'center',
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: colors.brand,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+  values: {
+    marginTop: Spacing[10],
+    gap: Spacing[4],
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  cardBody: {
-    fontSize: 14,
-    color: colors.textBody,
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  telegramBtn: {
-    backgroundColor: colors.action,
-    borderRadius: 12,
-    paddingVertical: 14,
+  valueRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing[3],
   },
-  disabled: {
-    opacity: 0.6,
+  valueIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.green.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  telegramBtnText: {
-    color: colors.onAction,
-    fontSize: 15,
-    fontWeight: '600',
+  valueText: {
+    flex: 1,
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.base,
+    color: Colors.text.primary,
+    fontWeight: FontWeight.medium,
+  },
+  footer: {
+    paddingHorizontal: Spacing[6],
+    paddingTop: Spacing[4],
+    gap: Spacing[3],
   },
   errorText: {
-    color: '#d32f2f',
-    fontSize: 13,
-    marginBottom: 12,
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.sm,
+    color: Colors.error,
     textAlign: 'center',
+  },
+  legal: {
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.xs,
+    color: Colors.text.muted,
+    textAlign: 'center',
+    lineHeight: FontSize.xs * 1.5,
+    paddingHorizontal: Spacing[4],
   },
 });

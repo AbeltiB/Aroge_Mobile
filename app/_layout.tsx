@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, Image, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useAppState } from '../src/context/AppContext';
 import { I18nProvider } from '../src/i18n';
 import { api } from '../src/lib/api';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../src/constants';
+import { Button } from '../src/components/ui';
 import type { Notification } from '@arogenpm/sdk';
 
 function PopupOverlay() {
@@ -40,14 +42,13 @@ function PopupOverlay() {
         <View style={pStyles.card}>
           <View style={pStyles.badgeRow}>
             <View style={pStyles.badge}>
-              <Text style={pStyles.badgeChar}>አ</Text>
+              {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
+              <Image source={require('../assets/adaptive-icon.png')} style={pStyles.badgeMark} resizeMode="contain" />
             </View>
           </View>
           <Text style={pStyles.title}>{popup.title}</Text>
           <Text style={pStyles.body}>{popup.body}</Text>
-          <TouchableOpacity style={pStyles.btn} onPress={dismiss}>
-            <Text style={pStyles.btnText}>Got it</Text>
-          </TouchableOpacity>
+          <Button label="Got it" variant="primary" onPress={dismiss} fullWidth={false} style={pStyles.btn} />
         </View>
       </View>
     </Modal>
@@ -70,16 +71,16 @@ export default function RootLayout() {
         <I18nProvider>
           <AppProvider>
             <AppShell>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name='index' />
-                <Stack.Screen name='onboarding' />
-                <Stack.Screen name='(auth)' />
-                <Stack.Screen name='(app)' />
-                <Stack.Screen name='listing' />
-                <Stack.Screen name='order' />
-                <Stack.Screen name='checkout' />
-                <Stack.Screen name='notifications' />
-              </Stack>
+              {/* No explicit Stack.Screen children — none of them set per-route
+                  options, so they're purely decorative. Most of these route
+                  directories (listing/, order/, bundle/, etc.) have no
+                  _layout.tsx of their own, so expo-router flattens their
+                  files into leaf routes like "bundle/[id]" rather than a
+                  collapsible "bundle" group; declaring the bare directory
+                  name here doesn't match anything and just produces a
+                  "[Layout children]: No route named ..." warning. File-based
+                  routing registers every screen automatically regardless. */}
+              <Stack screenOptions={{ headerShown: false }} />
             </AppShell>
           </AppProvider>
         </I18nProvider>
@@ -90,23 +91,28 @@ export default function RootLayout() {
 
 const pStyles = StyleSheet.create({
   backdrop: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center', justifyContent: 'center', padding: 24,
+    flex: 1, backgroundColor: 'rgba(26,48,40,0.55)',
+    alignItems: 'center', justifyContent: 'center', padding: Spacing[6],
   },
   card: {
-    backgroundColor: '#ffffff', borderRadius: 18, padding: 28,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius['2xl'], padding: Spacing[8],
     alignItems: 'center', width: '100%', maxWidth: 360,
+    ...Shadow.lg,
   },
-  badgeRow: { marginBottom: 16 },
+  badgeRow: { marginBottom: Spacing[4] },
   badge: {
-    width: 56, height: 56, borderRadius: 28, backgroundColor: '#c89b3c',
+    width: 64, height: 64, borderRadius: BorderRadius.full, backgroundColor: Colors.cream.background,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: Colors.border.default,
   },
-  badgeChar: { fontSize: 28, color: '#ffffff', fontWeight: '700' },
-  title: { fontSize: 18, fontWeight: '800', color: '#1a3028', textAlign: 'center', marginBottom: 10 },
-  body: { fontSize: 14, color: '#444444', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
-  btn: {
-    backgroundColor: '#1f7a5a', borderRadius: 10, paddingHorizontal: 40, paddingVertical: 13,
+  badgeMark: { width: 44, height: 44 },
+  title: {
+    fontFamily: FontFamily.sans, fontSize: FontSize.md, fontWeight: FontWeight.bold,
+    color: Colors.text.primary, textAlign: 'center', marginBottom: Spacing[2],
   },
-  btnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  body: {
+    fontFamily: FontFamily.sans, fontSize: FontSize.base, color: Colors.text.secondary,
+    textAlign: 'center', lineHeight: FontSize.base * 1.45, marginBottom: Spacing[6],
+  },
+  btn: { paddingHorizontal: Spacing[10] },
 });

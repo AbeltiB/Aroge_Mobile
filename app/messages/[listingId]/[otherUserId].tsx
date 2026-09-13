@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Image,
+  ActivityIndicator, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { Camera, Send, MessageCircle } from 'lucide-react-native';
 import { colors } from '../../../src/lib/colors';
+import { Colors, BorderRadius, Spacing } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import { useAppState } from '../../../src/context/AppContext';
 import type { Message } from '@arogenpm/sdk';
+import { ScreenHeader, RemoteImage, EmptyState, IconButton } from '../../../src/components/ui';
 
 const QUICK_REPLIES = [
   'Is this still available?',
@@ -86,15 +89,7 @@ export default function ConversationScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={{ fontSize: 20, color: colors.onBrand }}>←</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerName} numberOfLines={1}>{name || 'Chat'}</Text>
-          {!!listingTitle && <Text style={styles.headerListing} numberOfLines={1}>{listingTitle}</Text>}
-        </View>
-      </View>
+      <ScreenHeader title={name || 'Chat'} subtitle={listingTitle} tone="brand" bordered />
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
@@ -105,18 +100,20 @@ export default function ConversationScreen() {
           keyExtractor={(m) => m.id}
           contentContainerStyle={{ padding: 12, gap: 6 }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-          ListEmptyComponent={<Text style={styles.empty}>Say hello to start the conversation.</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<MessageCircle size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+              title="Say hello"
+              subtitle="Start the conversation with a quick reply below"
+            />
+          }
           renderItem={({ item }) => {
             const mine = item.senderId === myId;
             return (
               <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
                 <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs, item.mediaKey && styles.bubbleMedia]}>
                   {item.mediaKey ? (
-                    <Image
-                      source={{ uri: `https://res.cloudinary.com/demo/image/upload/${item.mediaKey}` }}
-                      style={styles.bubbleImage}
-                      resizeMode="cover"
-                    />
+                    <RemoteImage photoKey={item.mediaKey} preset="small" style={styles.bubbleImage} rounded={BorderRadius.md} />
                   ) : (
                     <Text style={mine ? styles.bubbleTextMine : styles.bubbleTextTheirs}>{item.body}</Text>
                   )}
@@ -141,9 +138,9 @@ export default function ConversationScreen() {
           )}
         />
         <View style={styles.inputRow}>
-          <TouchableOpacity style={styles.photoBtn} onPress={sendPhoto} disabled={sending}>
-            <Text style={{ fontSize: 20 }}>📷</Text>
-          </TouchableOpacity>
+          <IconButton tone="tint" size="md" onPress={sendPhoto} disabled={sending} silent>
+            <Camera size={19} color={Colors.green.primary} />
+          </IconButton>
           <TextInput
             style={styles.input}
             value={text}
@@ -152,13 +149,15 @@ export default function ConversationScreen() {
             placeholderTextColor={colors.textMuted}
             multiline
           />
-          <TouchableOpacity
-            style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]}
+          <IconButton
+            tone="floating"
+            size="md"
+            style={(!text.trim() || sending) ? styles.sendDisabled : styles.sendActive}
             disabled={!text.trim() || sending}
             onPress={() => send(text)}
           >
-            {sending ? <ActivityIndicator size="small" color={colors.onAction} /> : <Text style={styles.sendBtnText}>Send</Text>}
-          </TouchableOpacity>
+            {sending ? <ActivityIndicator size="small" color="#fff" /> : <Send size={17} color="#fff" />}
+          </IconButton>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -166,25 +165,13 @@ export default function ConversationScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.brand,
-    paddingHorizontal: 12, paddingVertical: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-  },
-  backBtn: { padding: 4 },
-  headerName: { fontSize: 16, fontWeight: '700', color: colors.onBrand },
-  headerListing: { fontSize: 12, color: 'rgba(243,239,231,0.7)', marginTop: 1 },
-  empty: {
-    textAlign: 'center', color: colors.textMuted, marginTop: 40,
-    fontSize: 14, paddingHorizontal: 32, lineHeight: 20,
-  },
   bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start' },
   bubbleRowMine: { justifyContent: 'flex-end' },
   bubble: { maxWidth: '78%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 9 },
   bubbleTheirs: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   bubbleMine: { backgroundColor: colors.brand },
   bubbleMedia: { padding: 4, overflow: 'hidden' },
-  bubbleImage: { width: 200, height: 200, borderRadius: 10 },
+  bubbleImage: { width: 200, height: 200 },
   bubbleTextTheirs: { color: colors.textPrimary, fontSize: 14 },
   bubbleTextMine: { color: colors.onBrand, fontSize: 14 },
   quickReply: {
@@ -193,7 +180,7 @@ const styles = StyleSheet.create({
   },
   quickReplyText: { fontSize: 12, color: colors.brand, fontWeight: '500' },
   inputRow: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing[2],
     paddingHorizontal: 12, paddingBottom: 10, paddingTop: 4,
     backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
   },
@@ -202,10 +189,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
     color: colors.textPrimary, backgroundColor: colors.canvas, maxHeight: 100,
   },
-  photoBtn: { paddingHorizontal: 4, paddingVertical: 8 },
-  sendBtn: {
-    backgroundColor: colors.action, borderRadius: 14,
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  sendBtnText: { color: colors.onAction, fontWeight: '700', fontSize: 13 },
+  sendActive: { backgroundColor: Colors.terracotta.primary },
+  sendDisabled: { backgroundColor: Colors.terracotta.primary, opacity: 0.5 },
 });

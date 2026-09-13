@@ -5,14 +5,39 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import {
+  Package, ShoppingBag, Handshake, MessageCircle, Heart,
+  Bell, Lock, FileText, HelpCircle, ChevronRight, Store, RotateCcw, Rocket,
+} from 'lucide-react-native';
 import { colors } from '../../../src/lib/colors';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
 import { useAppState } from '../../../src/context/AppContext';
 import { useTranslation, type Locale } from '../../../src/i18n';
 import SellerRegistrationWizard from '../../../src/components/SellerRegistrationWizard';
+import { Avatar, Badge, Card, Button } from '../../../src/components/ui';
+import { haptics } from '../../../src/lib/haptics';
+
+const ACTIVITY_ITEMS = [
+  { label: 'My Listings', Icon: Package, route: '/listing/create' as const },
+  { label: 'My Orders', Icon: ShoppingBag, route: '/orders' as const },
+  { label: 'My Offers', Icon: Handshake, route: '/offers/buying' as const },
+  { label: 'Messages', Icon: MessageCircle, route: '/(app)/(tabs)/messages' as const },
+  { label: 'Saved Items', Icon: Heart, route: '/saved' as const },
+];
+
+function MenuRow({ label, Icon, onPress }: { label: string; Icon: any; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.menuRow} onPress={() => { haptics.tap(); onPress(); }} activeOpacity={0.7}>
+      <Icon size={18} color={Colors.text.secondary} strokeWidth={1.75} />
+      <Text style={styles.menuLabel}>{label}</Text>
+      <ChevronRight size={16} color={Colors.text.muted} />
+    </TouchableOpacity>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, sellerMode, sellerProfile, setSellerMode, logout } = useAppState();
+  const { sellerMode, sellerProfile, setSellerMode, logout } = useAppState();
   const { locale, setLocale, t } = useTranslation();
   const [wizardVisible, setWizardVisible] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -41,7 +66,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
       <SellerRegistrationWizard
         visible={wizardVisible}
         onComplete={handleWizardComplete}
@@ -51,22 +76,18 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Profile header */}
         <View style={[styles.profileHeader, sellerMode && styles.profileHeaderSeller]}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>👤</Text>
-          </View>
+          <Avatar name={sellerProfile?.contactName} size={60} tone={sellerMode ? 'action' : 'brand'} />
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{sellerProfile?.contactName ?? 'My Account'}</Text>
-            <Text style={styles.tgHandle}>via Telegram · ID {user?.telegramId ?? '—'}</Text>
+            <Text style={styles.tgHandle}>Signed in with Telegram</Text>
             {sellerMode && sellerProfile && (
-              <View style={styles.sellerBadge}>
-                <Text style={styles.sellerBadgeText}>🏪 {sellerProfile.businessName}</Text>
-              </View>
+              <Badge label={sellerProfile.businessName} tone="neutral" icon={<Store size={11} color="#fff" />} style={styles.sellerBadge} />
             )}
           </View>
         </View>
 
         {/* Seller mode card */}
-        <View style={styles.card}>
+        <Card>
           <View style={styles.cardRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>Seller Mode</Text>
@@ -80,7 +101,7 @@ export default function ProfileScreen() {
               value={sellerMode}
               onValueChange={handleSellerToggle}
               trackColor={{ true: colors.brand, false: colors.border }}
-              thumbColor={sellerMode ? colors.surface : '#ccc'}
+              thumbColor="#fff"
               disabled={toggling}
             />
           </View>
@@ -99,50 +120,34 @@ export default function ProfileScreen() {
                 <Text style={styles.infoLabel}>City</Text>
                 <Text style={styles.infoValue}>{sellerProfile.city}</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => setWizardVisible(true)}
-                style={styles.editProfileBtn}
-              >
-                <Text style={styles.editProfileText}>Edit Seller Profile</Text>
-              </TouchableOpacity>
+              <Button label="Edit Seller Profile" variant="ghost" size="sm" onPress={() => setWizardVisible(true)} style={{ marginTop: Spacing[2] }} />
             </View>
           )}
 
           {!sellerMode && (
-            <TouchableOpacity
-              style={styles.activateBtn}
+            <Button
+              label={sellerProfile ? 'Re-activate Seller Mode' : 'Set Up Seller Account'}
+              variant="secondary"
+              icon={sellerProfile ? <RotateCcw size={15} color={Colors.green.primary} /> : <Rocket size={15} color={Colors.green.primary} />}
               onPress={() => handleSellerToggle(true)}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.activateBtnText}>
-                {sellerProfile ? '🔄 Re-activate Seller Mode' : '🚀 Set Up Seller Account'}
-              </Text>
-            </TouchableOpacity>
+              style={{ marginTop: Spacing[3] }}
+            />
           )}
-        </View>
+        </Card>
 
         {/* Activity */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>My Activity</Text>
-          {[
-            { label: '📦 My Listings', onPress: () => router.push('/listing/create' as any) },
-            { label: '🛍 My Orders', onPress: () => router.push('/orders' as any) },
-            { label: '🤝 My Offers', onPress: () => router.push('/offers/buying' as any) },
-            { label: '💬 Messages', onPress: () => router.push('/(app)/(tabs)/messages' as any) },
-            { label: '❤️ Saved Items', onPress: () => router.push('/saved' as any) },
-          ].map(({ label, onPress }) => (
-            <TouchableOpacity key={label} style={styles.menuRow} onPress={onPress} activeOpacity={0.7}>
-              <Text style={styles.menuLabel}>{label}</Text>
-              <Text style={styles.menuArrow}>›</Text>
-            </TouchableOpacity>
+        <Card padded={false}>
+          <Text style={[styles.sectionTitle, styles.sectionTitlePadded]}>My Activity</Text>
+          {ACTIVITY_ITEMS.map(({ label, Icon, route }) => (
+            <MenuRow key={label} label={label} Icon={Icon} onPress={() => router.push(route)} />
           ))}
-        </View>
+        </Card>
 
         {/* Settings */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <Card padded={false}>
+          <Text style={[styles.sectionTitle, styles.sectionTitlePadded]}>Account</Text>
 
-          <View style={[styles.cardRow, { paddingVertical: 10 }]}>
+          <View style={[styles.cardRow, styles.langRow]}>
             <View style={{ flex: 1 }}>
               <Text style={styles.menuLabel}>{t('profile.language')}</Text>
             </View>
@@ -150,7 +155,7 @@ export default function ProfileScreen() {
               {(['en', 'am'] as Locale[]).map((l) => (
                 <TouchableOpacity
                   key={l}
-                  onPress={() => setLocale(l)}
+                  onPress={() => { haptics.select(); setLocale(l); }}
                   style={[styles.langOption, locale === l && styles.langOptionActive]}
                 >
                   <Text style={[styles.langOptionText, locale === l && styles.langOptionTextActive]}>
@@ -161,22 +166,13 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {[
-            { label: '🔔 Notifications', onPress: () => router.push('/notifications' as any) },
-            { label: '🔒 Privacy & Security', onPress: () => {} },
-            { label: '📜 Terms & Conditions', onPress: () => {} },
-            { label: '❓ Help & Support', onPress: () => {} },
-          ].map(({ label, onPress }) => (
-            <TouchableOpacity key={label} style={styles.menuRow} onPress={onPress} activeOpacity={0.7}>
-              <Text style={styles.menuLabel}>{label}</Text>
-              <Text style={styles.menuArrow}>›</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          <MenuRow label="Notifications" Icon={Bell} onPress={() => router.push('/notifications')} />
+          <MenuRow label="Privacy & Security" Icon={Lock} onPress={() => {}} />
+          <MenuRow label="Terms & Conditions" Icon={FileText} onPress={() => {}} />
+          <MenuRow label="Help & Support" Icon={HelpCircle} onPress={() => {}} />
+        </Card>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-          <Text style={styles.logoutText}>Sign Out</Text>
-        </TouchableOpacity>
+        <Button label="Sign Out" variant="danger" onPress={handleLogout} style={{ marginTop: 4 }} />
 
         <Text style={styles.version}>Aroge v1.0 · አሮጌ</Text>
       </ScrollView>
@@ -188,23 +184,12 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, gap: 12, paddingBottom: 40 },
   profileHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: colors.brand, borderRadius: 20, padding: 18,
+    backgroundColor: colors.brand, borderRadius: BorderRadius.xl, padding: 18,
   },
   profileHeaderSeller: { backgroundColor: colors.action },
-  avatar: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarText: { fontSize: 28 },
-  name: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
+  name: { fontFamily: FontFamily.sans, fontSize: FontSize.md, fontWeight: FontWeight.bold, color: colors.onBrand },
   tgHandle: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
-  sellerBadge: {
-    marginTop: 6, backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start',
-  },
-  sellerBadgeText: { fontSize: 11, color: colors.onBrand, fontWeight: '600' },
-  card: { backgroundColor: colors.surface, borderRadius: 16, padding: 16 },
+  sellerBadge: { marginTop: 6, backgroundColor: 'rgba(255,255,255,0.2)' },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
   cardTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
   cardSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
@@ -215,25 +200,18 @@ const styles = StyleSheet.create({
   sellerInfoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   infoLabel: { fontSize: 13, color: colors.textMuted },
   infoValue: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  editProfileBtn: {
-    marginTop: 8, paddingVertical: 10, borderRadius: 10,
-    backgroundColor: colors.brandTint, alignItems: 'center',
-  },
-  editProfileText: { color: colors.brand, fontSize: 13, fontWeight: '600' },
-  activateBtn: {
-    marginTop: 10, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: colors.actionTint, alignItems: 'center',
-  },
-  activateBtnText: { color: colors.action, fontSize: 14, fontWeight: '700' },
   sectionTitle: {
     fontSize: 11, fontWeight: '700', color: colors.textMuted,
-    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4,
+    textTransform: 'uppercase', letterSpacing: 0.8,
   },
+  sectionTitlePadded: { paddingHorizontal: Spacing[4], paddingTop: Spacing[4], paddingBottom: Spacing[1] },
   menuRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing[3],
+    paddingVertical: 13, paddingHorizontal: Spacing[4],
+    borderTopWidth: 1, borderTopColor: colors.border,
   },
-  menuLabel: { fontSize: 14, color: colors.textPrimary },
+  menuLabel: { flex: 1, fontSize: 14, color: colors.textPrimary },
+  langRow: { paddingHorizontal: Spacing[4], paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.border },
   langSwitch: {
     flexDirection: 'row', backgroundColor: colors.canvas,
     borderRadius: 10, padding: 3, borderWidth: 1, borderColor: colors.border,
@@ -242,11 +220,5 @@ const styles = StyleSheet.create({
   langOptionActive: { backgroundColor: colors.brand },
   langOptionText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
   langOptionTextActive: { color: colors.onBrand },
-  menuArrow: { fontSize: 20, color: colors.textMuted, lineHeight: 22 },
-  logoutBtn: {
-    paddingVertical: 14, borderRadius: 14,
-    backgroundColor: 'rgba(184,92,42,0.08)', alignItems: 'center', marginTop: 4,
-  },
-  logoutText: { color: colors.action, fontSize: 15, fontWeight: '700' },
   version: { textAlign: 'center', fontSize: 11, color: colors.textMuted, marginTop: 4 },
 });

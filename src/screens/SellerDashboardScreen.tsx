@@ -5,11 +5,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Bell, Palmtree, Package, Gift } from 'lucide-react-native';
 import { colors } from '../lib/colors';
+import { Colors } from '../constants';
 import { api } from '../lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing, Order, Bundle } from '@arogenpm/sdk';
 import { useAppState } from '../context/AppContext';
+import { RemoteImage, Badge } from '../components/ui';
+
+const ORDER_STATUS_TONE: Record<string, 'success' | 'warning' | 'error' | 'neutral'> = {
+  PAID_ESCROWED: 'success',
+  COMPLETED: 'success',
+  DISPUTED: 'error',
+  PENDING_PAYMENT: 'warning',
+};
 
 interface SellerStats {
   listings: { active: number; draft: number; sold: number; reserved: number; total: number }
@@ -136,7 +146,7 @@ export default function SellerDashboardScreen() {
         </View>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <TouchableOpacity onPress={() => router.push('/notifications' as any)} style={styles.iconBtn}>
-            <Text style={{ fontSize: 20 }}>🔔</Text>
+            <Bell size={20} color={colors.onAction} strokeWidth={2} />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
@@ -161,7 +171,7 @@ export default function SellerDashboardScreen() {
         <View style={[styles.holidayCard, holidayMode && styles.holidayCardActive]}>
           <View style={styles.holidayTop}>
             <View style={styles.holidayLeft}>
-              <Text style={styles.holidayIcon}>🏖️</Text>
+              <Palmtree size={22} color={holidayMode ? Colors.gold.dark : colors.brand} strokeWidth={1.75} />
               <View>
                 <Text style={[styles.holidayTitle, holidayMode && styles.holidayTitleActive]}>
                   Holiday Mode
@@ -238,11 +248,9 @@ export default function SellerDashboardScreen() {
                       Buyer: {(order as any).buyer?.name ?? '—'}
                     </Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
+                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
                     <Text style={styles.orderAmount}>{formatETB(order.amount)}</Text>
-                    <View style={[styles.statusBadge, getStatusStyle(order.orderStatus)]}>
-                      <Text style={styles.statusText}>{formatStatus(order.orderStatus)}</Text>
-                    </View>
+                    <Badge label={formatStatus(order.orderStatus)} tone={ORDER_STATUS_TONE[order.orderStatus] ?? 'neutral'} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -267,9 +275,12 @@ export default function SellerDashboardScreen() {
                   onPress={() => router.push(`/listing/edit/${listing.id}` as any)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.listingIcon}>
-                    <Text style={{ fontSize: 18 }}>📦</Text>
-                  </View>
+                  <RemoteImage
+                    photoKey={listing.photos?.find((p: any) => p.isPrimary)?.cloudinaryKey ?? listing.photos?.[0]?.cloudinaryKey}
+                    style={styles.listingIcon}
+                    rounded={8}
+                    fallbackIcon={<Package size={18} color={Colors.text.muted} strokeWidth={1.5} />}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.listingTitle} numberOfLines={1}>{listing.title}</Text>
                     <Text style={styles.listingCond}>{listing.condition} · {listing.city ?? '—'}</Text>
@@ -299,7 +310,7 @@ export default function SellerDashboardScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.listingIcon}>
-                    <Text style={{ fontSize: 18 }}>🎁</Text>
+                    <Gift size={18} color={Colors.text.muted} strokeWidth={1.5} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.listingTitle}>{bundle.items?.length ?? 0} items</Text>
@@ -316,7 +327,9 @@ export default function SellerDashboardScreen() {
 
         {s.listings.active === 0 && (
           <View style={styles.emptyState}>
-            <Text style={{ fontSize: 40, textAlign: 'center' }}>🏪</Text>
+            <View style={styles.emptyIconWrap}>
+              <Package size={30} color={Colors.text.muted} strokeWidth={1.5} />
+            </View>
             <Text style={styles.emptyTitle}>Your shop is empty</Text>
             <Text style={styles.emptyDesc}>Create your first listing and start selling!</Text>
             <TouchableOpacity
@@ -334,14 +347,6 @@ export default function SellerDashboardScreen() {
 
 function formatStatus(status: string): string {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Paid Escrowed', 'In Escrow');
-}
-
-function getStatusStyle(status: string): object {
-  if (status === 'PAID_ESCROWED') return { backgroundColor: '#e6f0eb' };
-  if (status === 'COMPLETED') return { backgroundColor: '#e6f0eb' };
-  if (status === 'DISPUTED') return { backgroundColor: 'rgba(184,92,42,0.12)' };
-  if (status === 'PENDING_PAYMENT') return { backgroundColor: '#faeeda' };
-  return { backgroundColor: colors.brandTint };
 }
 
 const styles = StyleSheet.create({
@@ -377,8 +382,6 @@ const styles = StyleSheet.create({
   orderTitle: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   orderBuyer: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   orderAmount: { fontSize: 14, fontWeight: '800', color: colors.value },
-  statusBadge: { marginTop: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
-  statusText: { fontSize: 9, fontWeight: '700', color: colors.textPrimary },
   listingRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
   listingIcon: {
     width: 36, height: 36, borderRadius: 8,
@@ -388,6 +391,11 @@ const styles = StyleSheet.create({
   listingCond: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
   listingPrice: { fontSize: 13, fontWeight: '700', color: colors.value },
   emptyState: { alignItems: 'center', gap: 8, paddingVertical: 32 },
+  emptyIconWrap: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
   emptyDesc: { fontSize: 13, color: colors.textMuted, textAlign: 'center', paddingHorizontal: 20 },
   createBtn: {

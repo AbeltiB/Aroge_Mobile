@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, TextInput, Alert,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Check, Gift } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
+import { ScreenHeader, Input, Button, EmptyState } from '../../src/components/ui';
+import { haptics } from '../../src/lib/haptics';
 
 export default function CreateBundleScreen() {
   const router = useRouter();
@@ -30,6 +33,7 @@ export default function CreateBundleScreen() {
     .reduce((sum, l) => sum + l.price, 0);
 
   function toggle(id: string) {
+    haptics.select();
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -59,18 +63,12 @@ export default function CreateBundleScreen() {
       Alert.alert('Error', (res as any).message ?? 'Could not create bundle');
       return;
     }
-    router.replace(`/bundle/${res.data.id}` as any);
+    router.replace(`/bundle/${res.data.id}`);
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Bundle</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="New Bundle" tone="brand" bordered />
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
@@ -78,9 +76,13 @@ export default function CreateBundleScreen() {
         <FlatList
           data={listings}
           keyExtractor={(l) => l.id}
-          contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 160 }}
+          contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={styles.empty}>You need at least 2 active listings to make a bundle.</Text>
+            <EmptyState
+              icon={<Gift size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+              title="Not enough listings"
+              subtitle="You need at least 2 active listings to make a bundle"
+            />
           }
           ListHeaderComponent={
             <Text style={styles.hint}>Select 2 or more of your active listings to bundle together.</Text>
@@ -94,7 +96,7 @@ export default function CreateBundleScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-                  {isSelected && <Text style={styles.checkboxMark}>✓</Text>}
+                  {isSelected && <Check size={14} color={colors.onBrand} strokeWidth={3} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
@@ -111,47 +113,26 @@ export default function CreateBundleScreen() {
           {selected.size} item{selected.size === 1 ? '' : 's'} selected
           {selected.size > 0 ? ` · Individually: ${formatETB(selectedTotal)}` : ''}
         </Text>
-        <TextInput
-          style={styles.priceInput}
+        <Input
           placeholder="Combined bundle price (ETB)"
           keyboardType="numeric"
           value={price}
           onChangeText={setPrice}
-          placeholderTextColor={colors.textMuted}
         />
-        <TouchableOpacity
-          style={[styles.createBtn, submitting && { opacity: 0.6 }]}
-          onPress={handleCreate}
-          disabled={submitting}
-          activeOpacity={0.85}
-        >
-          {submitting
-            ? <ActivityIndicator color={colors.onAction} size="small" />
-            : <Text style={styles.createBtnText}>Create Bundle</Text>}
-        </TouchableOpacity>
+        <Button label="Create Bundle" variant="primary" loading={submitting} onPress={handleCreate} />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.brand,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  backBtn: { width: 36, alignItems: 'flex-start' },
-  backText: { color: colors.onBrand, fontSize: 20 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
+  list: { padding: Spacing[3], gap: 8, paddingBottom: 200 },
   hint: { fontSize: 12, color: colors.textMuted, marginBottom: 4, paddingHorizontal: 2 },
-  empty: {
-    textAlign: 'center', color: colors.textMuted, marginTop: 40,
-    fontSize: 14, paddingHorizontal: 32, lineHeight: 20,
-  },
   row: {
-    backgroundColor: colors.surface, borderRadius: 14, padding: 14,
+    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 14,
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderWidth: 1, borderColor: colors.border,
+    marginBottom: 8,
   },
   rowSelected: { borderColor: colors.brand, backgroundColor: colors.brandTint },
   checkbox: {
@@ -160,7 +141,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   checkboxChecked: { borderColor: colors.brand, backgroundColor: colors.brand },
-  checkboxMark: { color: colors.onBrand, fontSize: 13, fontWeight: '700' },
   title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   price: { fontSize: 13, fontWeight: '700', color: colors.value, marginTop: 2 },
   footer: {
@@ -169,14 +149,4 @@ const styles = StyleSheet.create({
     padding: 16, gap: 10,
   },
   footerHint: { fontSize: 12, color: colors.textMuted, textAlign: 'center' },
-  priceInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
-    color: colors.textPrimary, backgroundColor: colors.canvas,
-  },
-  createBtn: {
-    backgroundColor: colors.action, borderRadius: 14,
-    paddingVertical: 14, alignItems: 'center',
-  },
-  createBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
 });

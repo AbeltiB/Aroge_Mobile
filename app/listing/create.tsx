@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, Switch, ActivityIndicator, Image,
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, Alert, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { Image as ExpoImage } from 'expo-image';
+import { X, Plus } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import type { Category } from '@arogenpm/sdk';
 import { ItemCondition } from '@arogenpm/sdk';
+import { ScreenHeader, Card, Input, Chip, Button } from '../../src/components/ui';
 
 const CONDITIONS = Object.values(ItemCondition);
 const MAX_PHOTOS = 10;
@@ -108,181 +112,107 @@ export default function CreateListingScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Listing</Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="New Listing" tone="action" bordered />
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <View style={styles.field}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Card style={styles.section}>
           <Text style={styles.label}>Photos * ({photos.length}/{MAX_PHOTOS})</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {photos.map((uri) => (
                 <View key={uri} style={styles.photoThumb}>
-                  <Image source={{ uri }} style={styles.photoImage} />
+                  <ExpoImage source={{ uri }} style={styles.photoImage} contentFit="cover" />
                   <TouchableOpacity style={styles.photoRemove} onPress={() => removePhoto(uri)}>
-                    <Text style={styles.photoRemoveText}>✕</Text>
+                    <X size={11} color="#fff" strokeWidth={3} />
                   </TouchableOpacity>
                 </View>
               ))}
               {photos.length < MAX_PHOTOS && (
                 <TouchableOpacity style={styles.photoAdd} onPress={pickPhotos}>
-                  <Text style={styles.photoAddText}>+{'\n'}Add</Text>
+                  <Plus size={20} color={colors.brand} strokeWidth={2} />
+                  <Text style={styles.photoAddText}>Add</Text>
                 </TouchableOpacity>
               )}
             </View>
           </ScrollView>
-        </View>
+        </Card>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Title *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="What are you selling?"
-            value={form.title}
-            onChangeText={(v) => update('title', v)}
-            maxLength={120}
-          />
-        </View>
+        <Card style={styles.section}>
+          <View style={styles.field}>
+            <Input label="Title *" placeholder="What are you selling?" value={form.title} onChangeText={(v) => update('title', v)} maxLength={120} />
+          </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Description *</Text>
-          <TextInput
-            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-            placeholder="Describe the item, its condition, any defects…"
-            value={form.description}
-            onChangeText={(v) => update('description', v)}
-            multiline
-            maxLength={2000}
-          />
-        </View>
+          <View style={styles.field}>
+            <Input
+              label="Description *"
+              placeholder="Describe the item, its condition, any defects…"
+              value={form.description}
+              onChangeText={(v) => update('description', v)}
+              multiline
+              style={{ height: 100, paddingTop: 12, textAlignVertical: 'top' }}
+              maxLength={2000}
+            />
+          </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Category *</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => update('categoryId', cat.id)}
-                  style={[
-                    styles.chip,
-                    form.categoryId === cat.id && styles.chipActive,
-                  ]}
-                >
-                  <Text style={[styles.chipText, form.categoryId === cat.id && styles.chipTextActive]}>
-                    {cat.nameEn}
-                  </Text>
-                </TouchableOpacity>
+          <View style={styles.field}>
+            <Text style={styles.label}>Category *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {categories.map((cat) => (
+                  <Chip key={cat.id} label={cat.nameEn} selected={form.categoryId === cat.id} onPress={() => update('categoryId', cat.id)} tone="action" />
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Condition *</Text>
+            <View style={styles.chipWrap}>
+              {CONDITIONS.map((c) => (
+                <Chip key={c} label={c.replace('_', ' ')} selected={form.condition === c} onPress={() => update('condition', c)} tone="action" />
               ))}
             </View>
-          </ScrollView>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Condition *</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-            {CONDITIONS.map((c) => (
-              <TouchableOpacity
-                key={c}
-                onPress={() => update('condition', c)}
-                style={[styles.chip, form.condition === c && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, form.condition === c && styles.chipTextActive]}>
-                  {c.replace('_', ' ')}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
-        </View>
+        </Card>
 
-        <View style={styles.row}>
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Price (ETB) *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0"
-              value={form.price}
-              onChangeText={(v) => update('price', v)}
-              keyboardType="numeric"
-            />
+        <Card style={styles.section}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Input label="Price (ETB) *" placeholder="0" value={form.price} onChangeText={(v) => update('price', v)} keyboardType="numeric" />
+            </View>
+            <View style={styles.negotiableField}>
+              <Text style={styles.label}>Negotiable</Text>
+              <Switch
+                value={form.negotiable}
+                onValueChange={(v) => update('negotiable', v)}
+                trackColor={{ true: colors.brand }}
+                style={{ marginTop: 14 }}
+              />
+            </View>
           </View>
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Negotiable</Text>
-            <Switch
-              value={form.negotiable}
-              onValueChange={(v) => update('negotiable', v)}
-              trackColor={{ true: colors.brand }}
-              style={{ marginTop: 10 }}
-            />
+
+          <View style={styles.field}>
+            <Input label="City" placeholder="Addis Ababa" value={form.city} onChangeText={(v) => update('city', v)} />
           </View>
-        </View>
+        </Card>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>City</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Addis Ababa"
-            value={form.city}
-            onChangeText={(v) => update('city', v)}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.publishBtn, saving && { opacity: 0.6 }]}
-          onPress={handleCreate}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color={colors.onAction} />
-          ) : (
-            <Text style={styles.publishBtnText}>Create Listing</Text>
-          )}
-        </TouchableOpacity>
+        <Button label="Create Listing" variant="primary" loading={saving} onPress={handleCreate} style={{ marginTop: 4 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.action,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  back: { color: colors.onAction, fontSize: 15 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onAction },
+  scroll: { padding: Spacing[4], gap: Spacing[3] },
+  section: { gap: Spacing[3] },
   field: { gap: 4 },
-  row: { flexDirection: 'row', gap: 12 },
+  row: { flexDirection: 'row', gap: Spacing[3] },
+  negotiableField: { gap: 4 },
   label: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  input: {
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.brandTint,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   photoThumb: {
-    width: 76, height: 76, borderRadius: 10, overflow: 'hidden',
+    width: 76, height: 76, borderRadius: BorderRadius.md, overflow: 'hidden',
     backgroundColor: colors.brandTint,
   },
   photoImage: { width: '100%', height: '100%' },
@@ -291,21 +221,10 @@ const styles = StyleSheet.create({
     width: 20, height: 20, borderRadius: 10,
     backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center',
   },
-  photoRemoveText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   photoAdd: {
-    width: 76, height: 76, borderRadius: 10,
+    width: 76, height: 76, borderRadius: BorderRadius.md,
     borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center', gap: 2,
   },
-  photoAddText: { fontSize: 12, color: colors.brand, fontWeight: '600', textAlign: 'center' },
-  chipText: { fontSize: 12, color: colors.brandDeep, fontWeight: '500' },
-  chipTextActive: { color: colors.onBrand },
-  publishBtn: {
-    backgroundColor: colors.action,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  publishBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
+  photoAddText: { fontSize: 11, color: colors.brand, fontWeight: '600' },
 });

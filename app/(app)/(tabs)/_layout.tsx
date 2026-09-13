@@ -2,6 +2,7 @@
 
 import { Tabs } from 'expo-router';
 import { View, Text } from 'react-native';
+import { Home, Search, MessageCircle, User, Store } from 'lucide-react-native';
 import { colors } from '../../../src/lib/colors';
 import { useAppState } from '../../../src/context/AppContext';
 
@@ -40,9 +41,18 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name='index'
-        options={{ title: sellerMode ? 'Dashboard' : 'Home' }}
+        options={{
+          title: sellerMode ? 'Dashboard' : 'Home',
+          tabBarIcon: ({ color, focused }) => <Home color={color} size={22} strokeWidth={focused ? 2.4 : 2} />,
+        }}
       />
-      <Tabs.Screen name='search' options={{ title: 'Search' }} />
+      <Tabs.Screen
+        name='search'
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color, focused }) => <Search color={color} size={22} strokeWidth={focused ? 2.4 : 2} />,
+        }}
+      />
       <Tabs.Screen
         name='sell'
         options={{
@@ -50,11 +60,21 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused }) => <SellerPill label="SELL" active={focused} />,
         }}
       />
-      <Tabs.Screen name='messages' options={{ title: 'Messages' }} />
+      <Tabs.Screen
+        name='messages'
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color, focused }) => <MessageCircle color={color} size={22} strokeWidth={focused ? 2.4 : 2} />,
+        }}
+      />
       <Tabs.Screen
         name='profile'
         options={{
           title: sellerMode ? '🏪 Shop' : 'Profile',
+          tabBarIcon: ({ color, focused }) =>
+            sellerMode
+              ? <Store color={color} size={22} strokeWidth={focused ? 2.4 : 2} />
+              : <User color={color} size={22} strokeWidth={focused ? 2.4 : 2} />,
         }}
       />
     </Tabs>

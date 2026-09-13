@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Modal, TextInput, Alert,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Handshake } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, Spacing } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
+import { ScreenHeader, Card, Badge, Button, Input, EmptyState, SkeletonRow, BottomSheet, type BadgeTone } from '../../src/components/ui';
 
 interface OfferRow {
   id: string;
@@ -18,12 +18,12 @@ interface OfferRow {
   listing: { id: string; title: string; price: number; sellerId: string };
 }
 
-const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  PENDING: { bg: '#faeeda', color: '#3d2a10', label: 'Awaiting seller' },
-  ACCEPTED: { bg: '#e6f0eb', color: '#1f7a5a', label: 'Accepted' },
-  REJECTED: { bg: 'rgba(184,92,42,0.12)', color: '#B85C2A', label: 'Rejected' },
-  COUNTERED: { bg: '#faeeda', color: '#3d2a10', label: 'Countered' },
-  EXPIRED: { bg: '#f5f5f5', color: '#888', label: 'Expired' },
+const STATUS_META: Record<string, { tone: BadgeTone; label: string }> = {
+  PENDING: { tone: 'warning', label: 'Awaiting seller' },
+  ACCEPTED: { tone: 'success', label: 'Accepted' },
+  REJECTED: { tone: 'error', label: 'Rejected' },
+  COUNTERED: { tone: 'warning', label: 'Countered' },
+  EXPIRED: { tone: 'neutral', label: 'Expired' },
 };
 
 export default function BuyingOffersScreen() {
@@ -60,37 +60,39 @@ export default function BuyingOffersScreen() {
     if (action === 'ACCEPT') {
       Alert.alert('Offer Accepted', 'You can now check out at the agreed price.', [
         { text: 'Later', style: 'cancel' },
-        { text: 'Checkout', onPress: () => router.push(`/checkout/${offer.listing.id}?offerId=${offer.id}&offerAmount=${offer.amount}` as any) },
+        { text: 'Checkout', onPress: () => router.push(`/checkout/${offer.listing.id}?offerId=${offer.id}&offerAmount=${offer.amount}`) },
       ]);
     }
     load();
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Offers</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="My Offers" tone="brand" bordered />
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
+        <View style={{ paddingTop: 8 }}>
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
+        </View>
       ) : (
         <FlatList
           data={threads}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 12, gap: 10 }}
-          ListEmptyComponent={<Text style={styles.empty}>You haven't made any offers yet.</Text>}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Handshake size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+              title="No offers yet"
+              subtitle="You haven't made any offers yet"
+            />
+          }
           renderItem={({ item }) => {
-            const sc = STATUS_STYLE[item.status] ?? STATUS_STYLE.EXPIRED;
+            const meta = STATUS_META[item.status] ?? STATUS_META.EXPIRED;
             const busy = busyId === item.id;
             const isCounteredToBuyer = item.status === 'PENDING' && item.parentOfferId !== null;
             return (
-              <View style={styles.card}>
-                <TouchableOpacity onPress={() => router.push(`/listing/${item.listing.id}` as any)}>
+              <Card style={styles.card}>
+                <TouchableOpacity onPress={() => router.push(`/listing/${item.listing.id}`)}>
                   <Text style={styles.listingTitle} numberOfLines={1}>{item.listing.title}</Text>
                   <Text style={styles.listingPrice}>Listed at {formatETB(item.listing.price)}</Text>
                 </TouchableOpacity>
@@ -99,144 +101,80 @@ export default function BuyingOffersScreen() {
                   <Text style={styles.offerAmount}>
                     {isCounteredToBuyer ? 'Seller countered: ' : 'Your offer: '}{formatETB(item.amount)}
                   </Text>
-                  <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-                    <Text style={[styles.statusText, { color: sc.color }]}>{sc.label}</Text>
-                  </View>
+                  <Badge label={meta.label} tone={meta.tone} />
                 </View>
 
                 {isCounteredToBuyer && (
                   <View style={styles.actions}>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.rejectBtn]}
-                      disabled={busy}
-                      onPress={() => act(item, 'REJECT')}
-                    >
-                      <Text style={styles.rejectText}>Decline</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.counterBtn]}
-                      disabled={busy}
-                      onPress={() => { setCounterTarget(item); setCounterAmount(String(item.amount)); }}
-                    >
-                      <Text style={styles.counterText}>Counter</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.acceptBtn]}
-                      disabled={busy}
-                      onPress={() => act(item, 'ACCEPT')}
-                    >
-                      {busy ? <ActivityIndicator size="small" color={colors.onAction} /> : <Text style={styles.acceptText}>Accept</Text>}
-                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                      <Button label="Decline" variant="danger" size="sm" disabled={busy} onPress={() => act(item, 'REJECT')} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="Counter"
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        onPress={() => { setCounterTarget(item); setCounterAmount(String(item.amount)); }}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button label="Accept" variant="primary" size="sm" loading={busy} onPress={() => act(item, 'ACCEPT')} />
+                    </View>
                   </View>
                 )}
 
                 {item.status === 'ACCEPTED' && (
-                  <TouchableOpacity
-                    style={styles.checkoutBtn}
-                    onPress={() => router.push(`/checkout/${item.listing.id}?offerId=${item.id}&offerAmount=${item.amount}` as any)}
-                  >
-                    <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
-                  </TouchableOpacity>
+                  <Button
+                    label="Proceed to Checkout"
+                    variant="primary"
+                    onPress={() => router.push(`/checkout/${item.listing.id}?offerId=${item.id}&offerAmount=${item.amount}`)}
+                  />
                 )}
-              </View>
+              </Card>
             );
           }}
         />
       )}
 
-      <Modal visible={!!counterTarget} transparent animationType="slide" onRequestClose={() => setCounterTarget(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Counter Offer</Text>
-            {counterTarget && (
-              <Text style={styles.modalSub}>
-                Seller countered with {formatETB(counterTarget.amount)} on "{counterTarget.listing.title}"
-              </Text>
-            )}
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Your counter amount (ETB)"
-              keyboardType="numeric"
-              value={counterAmount}
-              onChangeText={setCounterAmount}
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setCounterTarget(null)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSend, !counterAmount && { opacity: 0.6 }]}
-                disabled={!counterAmount}
-                onPress={async () => {
-                  const target = counterTarget!;
-                  const amount = Number(counterAmount);
-                  setCounterTarget(null);
-                  await act(target, 'COUNTER', amount);
-                }}
-              >
-                <Text style={styles.modalSendText}>Send Counter</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+      <BottomSheet visible={!!counterTarget} onClose={() => setCounterTarget(null)} title="Counter Offer">
+        {counterTarget && (
+          <Text style={styles.modalSub}>
+            Seller countered with {formatETB(counterTarget.amount)} on &quot;{counterTarget.listing.title}&quot;
+          </Text>
+        )}
+        <View style={{ marginTop: Spacing[3], marginBottom: Spacing[5] }}>
+          <Input
+            placeholder="Your counter amount (ETB)"
+            keyboardType="numeric"
+            value={counterAmount}
+            onChangeText={setCounterAmount}
+            autoFocus
+          />
         </View>
-      </Modal>
+        <Button
+          label="Send Counter"
+          variant="primary"
+          disabled={!counterAmount}
+          onPress={async () => {
+            const target = counterTarget!;
+            const amount = Number(counterAmount);
+            setCounterTarget(null);
+            await act(target, 'COUNTER', amount);
+          }}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.brand,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  backBtn: { width: 36, alignItems: 'flex-start' },
-  backText: { color: colors.onBrand, fontSize: 20 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
-  empty: {
-    textAlign: 'center', color: colors.textMuted, marginTop: 40,
-    fontSize: 14, paddingHorizontal: 32, lineHeight: 20,
-  },
-  card: {
-    backgroundColor: colors.surface, borderRadius: 14, padding: 14, gap: 8,
-    borderWidth: 1, borderColor: colors.border,
-  },
+  list: { padding: Spacing[3], gap: 10 },
+  card: { gap: 8, marginBottom: 10 },
   listingTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
   listingPrice: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
   offerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   offerAmount: { fontSize: 14, fontWeight: '700', color: colors.value },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { fontSize: 11, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  rejectBtn: { backgroundColor: 'rgba(184,92,42,0.10)' },
-  rejectText: { color: colors.action, fontWeight: '600', fontSize: 13 },
-  counterBtn: { backgroundColor: colors.brandTint },
-  counterText: { color: colors.brand, fontWeight: '600', fontSize: 13 },
-  acceptBtn: { backgroundColor: colors.action },
-  acceptText: { color: colors.onAction, fontWeight: '700', fontSize: 13 },
-  checkoutBtn: {
-    marginTop: 4, backgroundColor: colors.brand, borderRadius: 10,
-    paddingVertical: 11, alignItems: 'center',
-  },
-  checkoutBtnText: { color: colors.onBrand, fontWeight: '700', fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: {
-    backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, gap: 12,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
   modalSub: { fontSize: 13, color: colors.textMuted },
-  modalInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 16,
-    color: colors.textPrimary, backgroundColor: colors.canvas,
-  },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  modalCancel: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: colors.brandTint, alignItems: 'center' },
-  modalCancelText: { color: colors.brand, fontWeight: '600', fontSize: 14 },
-  modalSend: { flex: 1.5, paddingVertical: 13, borderRadius: 12, backgroundColor: colors.action, alignItems: 'center' },
-  modalSendText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
 });

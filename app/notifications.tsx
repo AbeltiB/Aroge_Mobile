@@ -2,16 +2,17 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { Bell } from 'lucide-react-native';
+import { colors } from '../src/lib/colors';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../src/constants';
 import { api } from '../src/lib/api';
 import { useAppState } from '../src/context/AppContext';
 import type { Notification } from '@arogenpm/sdk';
+import { ScreenHeader, EmptyState } from '../src/components/ui';
 
 const PAGE_SIZE = 30;
 
 export default function NotificationsScreen() {
-  const insets = useSafeAreaInsets();
   const { refreshUnread } = useAppState();
 
   const [items, setItems] = useState<Notification[]>([]);
@@ -72,37 +73,36 @@ export default function NotificationsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1f7a5a" />
+        <ActivityIndicator size="large" color={colors.brand} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
-        {hasUnread && (
-          <TouchableOpacity onPress={markAllRead}>
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Notifications"
+        bordered
+        rightActions={hasUnread ? (
+          <TouchableOpacity onPress={markAllRead} hitSlop={8}>
             <Text style={styles.markAll}>Mark all read</Text>
           </TouchableOpacity>
-        )}
-      </View>
+        ) : undefined}
+      />
 
       <FlatList
         data={items}
         keyExtractor={(n) => n.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1f7a5a" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
-        ListFooterComponent={loadingMore ? <ActivityIndicator color="#1f7a5a" style={{ margin: 16 }} /> : null}
+        ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.brand} style={{ margin: 16 }} /> : null}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
-          </View>
+          <EmptyState
+            icon={<Bell size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+            title="No notifications yet"
+          />
         }
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -130,28 +130,19 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f3efe7' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3efe7' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: 'rgba(31,122,90,0.12)',
-  },
-  backBtn: { marginRight: 12 },
-  backText: { fontSize: 22, color: '#1f7a5a' },
-  title: { flex: 1, fontSize: 18, fontWeight: '700', color: '#1a3028' },
-  markAll: { fontSize: 13, color: '#1f7a5a', fontWeight: '600' },
-  list: { padding: 12 },
+  container: { flex: 1, backgroundColor: colors.canvas },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.canvas },
+  markAll: { fontSize: FontSize.sm, color: colors.brand, fontWeight: FontWeight.semibold },
+  list: { padding: Spacing[3] },
   card: {
-    backgroundColor: '#ffffff', borderRadius: 10, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: 'rgba(31,122,90,0.12)',
+    backgroundColor: colors.surface, borderRadius: BorderRadius.md, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: colors.border,
   },
-  unread: { borderColor: '#1f7a5a', backgroundColor: '#e6f0eb' },
+  unread: { borderColor: colors.brand, backgroundColor: colors.brandTint },
   row: { flexDirection: 'row', alignItems: 'flex-start' },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#1f7a5a', marginTop: 4, marginRight: 10 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand, marginTop: 4, marginRight: 10 },
   cardContent: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: '#1a3028', marginBottom: 2 },
-  cardBody: { fontSize: 13, color: '#444444', lineHeight: 18 },
-  cardTime: { fontSize: 11, color: 'rgba(31,122,90,0.45)', marginTop: 6 },
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 15, color: 'rgba(31,122,90,0.45)' },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  cardBody: { fontSize: 13, color: colors.textBody, lineHeight: 18 },
+  cardTime: { fontSize: 11, color: colors.textMuted, marginTop: 6 },
 });

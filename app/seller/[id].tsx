@@ -1,15 +1,17 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, ScrollView, Alert, Modal, TextInput,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Alert,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MoreHorizontal, BadgeCheck, Star, Store } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
 import { useAppState } from '../../src/context/AppContext';
+import { ScreenHeader, Avatar, Badge, Button, RemoteImage, EmptyState, BottomSheet, Input, IconButton } from '../../src/components/ui';
 
 interface SellerProfile {
   id: string;
@@ -41,7 +43,7 @@ export default function SellerProfileScreen() {
   const router = useRouter();
   const { user } = useAppState();
   const [profile, setProfile] = useState<SellerProfile | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<(Listing & { photos?: any[] })[]>([]);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [followPending, setFollowPending] = useState(false);
@@ -57,7 +59,7 @@ export default function SellerProfileScreen() {
       api.get<ReviewRow[]>(`/reviews/users/${id}`),
     ]).then(([profileRes, listingsRes, reviewsRes]) => {
       if (profileRes.success) setProfile(profileRes.data);
-      if (listingsRes.success) setListings(listingsRes.data);
+      if (listingsRes.success) setListings(listingsRes.data as any);
       if (reviewsRes.success) setReviews(reviewsRes.data);
       setLoading(false);
     });
@@ -136,39 +138,26 @@ export default function SellerProfileScreen() {
   const isSelf = user?.sub === profile.id;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Seller</Text>
-        {isSelf ? (
-          <View style={{ width: 36 }} />
-        ) : (
-          <TouchableOpacity onPress={showMoreMenu} style={styles.backBtn}>
-            <Text style={styles.backText}>⋯</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader
+        title="Seller"
+        tone="brand"
+        bordered
+        rightActions={!isSelf ? (
+          <IconButton tone="tint" size="md" onPress={showMoreMenu}>
+            <MoreHorizontal size={18} color={colors.brand} />
+          </IconButton>
+        ) : undefined}
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.profileCard}>
-          <View style={styles.avatar}><Text style={{ fontSize: 30 }}>👤</Text></View>
+          <Avatar name={profile.name} size={72} />
           <Text style={styles.name}>{profile.name}</Text>
           <View style={styles.badgeRow}>
-            {profile.verified && (
-              <View style={styles.badge}><Text style={styles.badgeText}>✓ Verified</Text></View>
-            )}
-            {profile.isTrusted && (
-              <View style={[styles.badge, { backgroundColor: colors.valueTint }]}>
-                <Text style={[styles.badgeText, { color: colors.valueText }]}>⭐ Trusted</Text>
-              </View>
-            )}
-            {profile.business && (
-              <View style={[styles.badge, { backgroundColor: colors.brandTint }]}>
-                <Text style={[styles.badgeText, { color: colors.brand }]}>🏪 {profile.business.name}</Text>
-              </View>
-            )}
+            {profile.verified && <Badge label="Verified" tone="brand" icon={<BadgeCheck size={11} color={Colors.green.primary} />} />}
+            {profile.isTrusted && <Badge label="Trusted" tone="gold" icon={<Star size={11} color={Colors.gold.dark} fill={Colors.gold.dark} />} />}
+            {profile.business && <Badge label={profile.business.name} tone="brand" icon={<Store size={11} color={Colors.green.primary} />} />}
           </View>
           <Text style={styles.meta}>
             {[profile.subCity, profile.city].filter(Boolean).join(', ') || 'Ethiopia'}
@@ -193,15 +182,15 @@ export default function SellerProfileScreen() {
           </View>
 
           {!isSelf && (
-            <TouchableOpacity
-              style={[styles.followBtn, profile.isFollowing && styles.followBtnActive]}
-              onPress={toggleFollow}
+            <Button
+              label={profile.isFollowing ? 'Following' : '+ Follow'}
+              variant={profile.isFollowing ? 'secondary' : 'primary'}
+              size="sm"
+              fullWidth={false}
               disabled={followPending}
-            >
-              <Text style={[styles.followBtnText, profile.isFollowing && styles.followBtnTextActive]}>
-                {profile.isFollowing ? 'Following' : '+ Follow'}
-              </Text>
-            </TouchableOpacity>
+              onPress={toggleFollow}
+              style={styles.followBtn}
+            />
           )}
         </View>
 
@@ -211,12 +200,15 @@ export default function SellerProfileScreen() {
           keyExtractor={(l) => l.id}
           numColumns={2}
           scrollEnabled={false}
-          contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
+          contentContainerStyle={styles.listingsGrid}
           columnWrapperStyle={{ gap: 10 }}
-          ListEmptyComponent={<Text style={styles.empty}>No active listings.</Text>}
+          ListEmptyComponent={<EmptyState icon={<Store size={24} color={Colors.text.muted} strokeWidth={1.5} />} title="No active listings" />}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.listingCard} onPress={() => router.push(`/listing/${item.id}` as any)}>
-              <View style={styles.listingPhoto}><Text style={{ fontSize: 28 }}>📦</Text></View>
+            <TouchableOpacity style={styles.listingCard} onPress={() => router.push(`/listing/${item.id}`)}>
+              <RemoteImage
+                photoKey={item.photos?.find((p: any) => p.isPrimary)?.cloudinaryKey ?? item.photos?.[0]?.cloudinaryKey}
+                style={styles.listingPhoto}
+              />
               <View style={{ padding: 8 }}>
                 <Text style={styles.listingTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={styles.listingPrice}>{formatETB(item.price)}</Text>
@@ -233,7 +225,11 @@ export default function SellerProfileScreen() {
                 <View key={r.id} style={styles.reviewCard}>
                   <View style={styles.reviewHeader}>
                     <Text style={styles.reviewerName}>{r.reviewer.name}</Text>
-                    <Text style={styles.reviewStars}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</Text>
+                    <View style={{ flexDirection: 'row', gap: 1 }}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={12} color={Colors.gold.primary} fill={i < r.rating ? Colors.gold.primary : 'transparent'} />
+                      ))}
+                    </View>
                   </View>
                   {r.comment && <Text style={styles.reviewComment}>{r.comment}</Text>}
                 </View>
@@ -243,108 +239,58 @@ export default function SellerProfileScreen() {
         )}
       </ScrollView>
 
-      <Modal visible={reportModalVisible} transparent animationType="slide" onRequestClose={() => setReportModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Report {profile.name}</Text>
-            <TextInput
-              style={styles.reportInput}
-              placeholder="What's wrong? (min 5 characters)"
-              value={reportReason}
-              onChangeText={setReportReason}
-              multiline
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setReportModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSend, (reportReason.trim().length < 5 || submittingReport) && { opacity: 0.6 }]}
-                disabled={reportReason.trim().length < 5 || submittingReport}
-                onPress={submitReport}
-              >
-                {submittingReport
-                  ? <ActivityIndicator color={colors.onAction} size="small" />
-                  : <Text style={styles.modalSendText}>Submit</Text>}
-              </TouchableOpacity>
-            </View>
-          </View>
+      <BottomSheet visible={reportModalVisible} onClose={() => setReportModalVisible(false)} title={`Report ${profile.name}`}>
+        <View style={{ marginTop: Spacing[2], marginBottom: Spacing[5] }}>
+          <Input
+            placeholder="What's wrong? (min 5 characters)"
+            value={reportReason}
+            onChangeText={setReportReason}
+            multiline
+            numberOfLines={3}
+            style={{ height: 90, paddingTop: 12, textAlignVertical: 'top' }}
+            autoFocus
+          />
         </View>
-      </Modal>
+        <Button
+          label="Submit"
+          variant="danger"
+          loading={submittingReport}
+          disabled={reportReason.trim().length < 5}
+          onPress={submitReport}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.brand,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  backBtn: { width: 36, alignItems: 'flex-start' },
-  backText: { color: colors.onBrand, fontSize: 20 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
   profileCard: { alignItems: 'center', padding: 20, gap: 6 },
-  avatar: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
-  },
   name: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 6 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
-  badge: { backgroundColor: colors.brandTint, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 11, fontWeight: '700', color: colors.brand },
   meta: { fontSize: 12, color: colors.textMuted, textAlign: 'center' },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 10 },
   statBox: { alignItems: 'center' },
   statValue: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
   statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  followBtn: {
-    marginTop: 10, paddingHorizontal: 24, paddingVertical: 10,
-    borderRadius: 20, backgroundColor: colors.brand,
-  },
-  followBtnActive: { backgroundColor: colors.brandTint },
-  followBtnText: { color: colors.onBrand, fontWeight: '700', fontSize: 13 },
-  followBtnTextActive: { color: colors.brand },
+  followBtn: { marginTop: 10, paddingHorizontal: 24 },
   sectionTitle: {
     fontSize: 13, fontWeight: '800', color: colors.textPrimary,
     textTransform: 'uppercase', letterSpacing: 0.8,
     paddingHorizontal: 12, marginTop: 16, marginBottom: 8,
   },
-  empty: { color: colors.textMuted, fontSize: 13, paddingHorizontal: 12 },
+  listingsGrid: { paddingHorizontal: Spacing[3], gap: 10 },
   listingCard: {
-    flex: 1, backgroundColor: colors.surface, borderRadius: 14,
+    flex: 1, backgroundColor: colors.surface, borderRadius: BorderRadius.lg,
     overflow: 'hidden', borderWidth: 1, borderColor: colors.border,
   },
-  listingPhoto: {
-    height: 90, backgroundColor: colors.brandTint,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  listingPhoto: { height: 100, width: '100%' },
   listingTitle: { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
   listingPrice: { fontSize: 13, fontWeight: '800', color: colors.value, marginTop: 2 },
   reviewCard: {
-    backgroundColor: colors.surface, borderRadius: 12, padding: 12,
+    backgroundColor: colors.surface, borderRadius: BorderRadius.md, padding: 12,
     borderWidth: 1, borderColor: colors.border, gap: 4,
   },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   reviewerName: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  reviewStars: { fontSize: 12, color: colors.value },
   reviewComment: { fontSize: 12, color: colors.textBody, lineHeight: 17 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: {
-    backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, gap: 14,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  reportInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14,
-    color: colors.textPrimary, backgroundColor: colors.canvas, minHeight: 80, textAlignVertical: 'top',
-  },
-  modalActions: { flexDirection: 'row', gap: 10 },
-  modalCancel: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: colors.brandTint, alignItems: 'center' },
-  modalCancelText: { color: colors.brand, fontWeight: '600', fontSize: 14 },
-  modalSend: { flex: 1.5, paddingVertical: 13, borderRadius: 12, backgroundColor: colors.action, alignItems: 'center' },
-  modalSendText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
 });

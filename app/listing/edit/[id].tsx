@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, Switch, ActivityIndicator, Image,
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, Alert, Switch, ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { X, Plus } from 'lucide-react-native';
 import { colors } from '../../../src/lib/colors';
+import { Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import type { Category, Listing, ListingPhoto } from '@arogenpm/sdk';
 import { ItemCondition } from '@arogenpm/sdk';
+import { ScreenHeader, Card, Badge, Input, Chip, Button, RemoteImage } from '../../../src/components/ui';
 
 const CONDITIONS = Object.values(ItemCondition);
 const MAX_PHOTOS = 10;
@@ -124,7 +127,7 @@ export default function EditListingScreen() {
     const res = await api.post<{ id: string }>('/listings', { ...form, price: Number(form.price) });
     if (res.success) {
       Alert.alert('Duplicated', 'A new draft copy was created. Add photos to publish it.', [
-        { text: 'OK', onPress: () => router.replace(`/listing/edit/${res.data.id}` as any) },
+        { text: 'OK', onPress: () => router.replace(`/listing/edit/${res.data.id}`) },
       ]);
     }
   }
@@ -138,131 +141,110 @@ export default function EditListingScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Listing</Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="Edit Listing" tone="action" bordered />
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+      <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Status: {status}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.statusLabel}>Status</Text>
+            <Badge label={status} tone={status === 'ACTIVE' ? 'success' : status === 'ARCHIVED' ? 'error' : 'neutral'} />
+          </View>
           {(status === 'DRAFT' || status === 'ACTIVE') && (
-            <TouchableOpacity onPress={togglePublish} style={styles.statusToggle}>
-              <Text style={styles.statusToggleText}>
-                {status === 'DRAFT' ? 'Publish' : 'Unpublish'}
-              </Text>
-            </TouchableOpacity>
+            <Button
+              label={status === 'DRAFT' ? 'Publish' : 'Unpublish'}
+              variant="secondary"
+              size="sm"
+              fullWidth={false}
+              onPress={togglePublish}
+            />
           )}
         </View>
 
-        <View style={styles.field}>
+        <Card style={styles.section}>
           <Text style={styles.label}>Photos ({photos.length}/{MAX_PHOTOS})</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {photos.map((p) => (
                 <View key={p.id} style={styles.photoThumb}>
-                  <Image
-                    source={{ uri: `https://res.cloudinary.com/demo/image/upload/${p.cloudinaryKey}` }}
-                    style={styles.photoImage}
-                  />
+                  <RemoteImage photoKey={p.cloudinaryKey} style={styles.photoImage} />
                   <TouchableOpacity style={styles.photoRemove} onPress={() => removePhoto(p.id)}>
-                    <Text style={styles.photoRemoveText}>✕</Text>
+                    <X size={11} color="#fff" strokeWidth={3} />
                   </TouchableOpacity>
                 </View>
               ))}
               {photos.length < MAX_PHOTOS && (
                 <TouchableOpacity style={styles.photoAdd} onPress={pickPhotos}>
-                  <Text style={styles.photoAddText}>+{'\n'}Add</Text>
+                  <Plus size={20} color={colors.brand} strokeWidth={2} />
+                  <Text style={styles.photoAddText}>Add</Text>
                 </TouchableOpacity>
               )}
             </View>
           </ScrollView>
-        </View>
+        </Card>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Title *</Text>
-          <TextInput style={styles.input} value={form.title} onChangeText={(v) => update('title', v)} maxLength={120} />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Description *</Text>
-          <TextInput
-            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-            value={form.description}
-            onChangeText={(v) => update('description', v)}
-            multiline
-            maxLength={2000}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Category *</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => update('categoryId', cat.id)}
-                  style={[styles.chip, form.categoryId === cat.id && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, form.categoryId === cat.id && styles.chipTextActive]}>{cat.nameEn}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Condition *</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-            {CONDITIONS.map((c) => (
-              <TouchableOpacity
-                key={c}
-                onPress={() => update('condition', c)}
-                style={[styles.chip, form.condition === c && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, form.condition === c && styles.chipTextActive]}>{c.replace('_', ' ')}</Text>
-              </TouchableOpacity>
-            ))}
+        <Card style={styles.section}>
+          <View style={styles.field}>
+            <Input label="Title *" value={form.title} onChangeText={(v) => update('title', v)} maxLength={120} />
           </View>
-        </View>
 
-        <View style={styles.row}>
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Price (ETB) *</Text>
-            <TextInput style={styles.input} value={form.price} onChangeText={(v) => update('price', v)} keyboardType="numeric" />
-          </View>
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Negotiable</Text>
-            <Switch
-              value={form.negotiable}
-              onValueChange={(v) => update('negotiable', v)}
-              trackColor={{ true: colors.brand }}
-              style={{ marginTop: 10 }}
+          <View style={styles.field}>
+            <Input
+              label="Description *"
+              value={form.description}
+              onChangeText={(v) => update('description', v)}
+              multiline
+              style={{ height: 100, paddingTop: 12, textAlignVertical: 'top' }}
+              maxLength={2000}
             />
           </View>
-        </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>City</Text>
-          <TextInput style={styles.input} value={form.city} onChangeText={(v) => update('city', v)} />
-        </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Category *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {categories.map((cat) => (
+                  <Chip key={cat.id} label={cat.nameEn} selected={form.categoryId === cat.id} onPress={() => update('categoryId', cat.id)} tone="action" />
+                ))}
+              </View>
+            </ScrollView>
+          </View>
 
-        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color={colors.onAction} /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
-        </TouchableOpacity>
+          <View style={styles.field}>
+            <Text style={styles.label}>Condition *</Text>
+            <View style={styles.chipWrap}>
+              {CONDITIONS.map((c) => (
+                <Chip key={c} label={c.replace('_', ' ')} selected={form.condition === c} onPress={() => update('condition', c)} tone="action" />
+              ))}
+            </View>
+          </View>
+        </Card>
 
-        <TouchableOpacity style={styles.duplicateBtn} onPress={handleDuplicate}>
-          <Text style={styles.duplicateBtnText}>Duplicate as New Draft</Text>
-        </TouchableOpacity>
+        <Card style={styles.section}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Input label="Price (ETB) *" value={form.price} onChangeText={(v) => update('price', v)} keyboardType="numeric" />
+            </View>
+            <View style={styles.negotiableField}>
+              <Text style={styles.label}>Negotiable</Text>
+              <Switch
+                value={form.negotiable}
+                onValueChange={(v) => update('negotiable', v)}
+                trackColor={{ true: colors.brand }}
+                style={{ marginTop: 14 }}
+              />
+            </View>
+          </View>
 
+          <View style={styles.field}>
+            <Input label="City" value={form.city} onChangeText={(v) => update('city', v)} />
+          </View>
+        </Card>
+
+        <Button label="Save Changes" variant="primary" loading={saving} onPress={handleSave} style={{ marginTop: 4 }} />
+        <Button label="Duplicate as New Draft" variant="secondary" onPress={handleDuplicate} />
         {status !== 'ARCHIVED' && (
-          <TouchableOpacity style={styles.archiveBtn} onPress={handleArchive}>
-            <Text style={styles.archiveBtnText}>Archive Listing</Text>
-          </TouchableOpacity>
+          <Button label="Archive Listing" variant="danger" onPress={handleArchive} />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -270,49 +252,28 @@ export default function EditListingScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.action, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 14, gap: 12,
-  },
-  back: { color: colors.onAction, fontSize: 15 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onAction },
+  scroll: { padding: Spacing[4], gap: Spacing[3] },
   statusRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: 10, padding: 12,
+    backgroundColor: colors.surface, borderRadius: BorderRadius.md, padding: 12,
+    borderWidth: 1, borderColor: colors.border,
   },
   statusLabel: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  statusToggle: { backgroundColor: colors.brand, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  statusToggleText: { color: colors.onBrand, fontSize: 12, fontWeight: '700' },
+  section: { gap: Spacing[3] },
   field: { gap: 4 },
-  row: { flexDirection: 'row', gap: 12 },
+  row: { flexDirection: 'row', gap: Spacing[3] },
+  negotiableField: { gap: 4 },
   label: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  input: {
-    backgroundColor: colors.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
-    fontSize: 14, color: colors.textPrimary, borderWidth: 1, borderColor: colors.border,
-  },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
-    backgroundColor: colors.brandTint, borderWidth: 1, borderColor: 'transparent',
-  },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
-  chipText: { fontSize: 12, color: colors.brandDeep, fontWeight: '500' },
-  chipTextActive: { color: colors.onBrand },
-  photoThumb: { width: 76, height: 76, borderRadius: 10, overflow: 'hidden', backgroundColor: colors.brandTint },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  photoThumb: { width: 76, height: 76, borderRadius: BorderRadius.md, overflow: 'hidden', backgroundColor: colors.brandTint },
   photoImage: { width: '100%', height: '100%' },
   photoRemove: {
     position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10,
     backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center',
   },
-  photoRemoveText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   photoAdd: {
-    width: 76, height: 76, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border,
-    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center',
+    width: 76, height: 76, borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: colors.border,
+    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 2,
   },
-  photoAddText: { fontSize: 12, color: colors.brand, fontWeight: '600', textAlign: 'center' },
-  saveBtn: { backgroundColor: colors.action, borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
-  saveBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
-  duplicateBtn: { backgroundColor: colors.brandTint, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  duplicateBtnText: { color: colors.brand, fontSize: 14, fontWeight: '600' },
-  archiveBtn: { backgroundColor: 'rgba(184,92,42,0.10)', borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  archiveBtnText: { color: colors.action, fontSize: 14, fontWeight: '600' },
+  photoAddText: { fontSize: 11, color: colors.brand, fontWeight: '600' },
 });

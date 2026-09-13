@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, TextInput,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Lock, Info } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB, calculateFees } from '@arogenpm/sdk';
 import type { Listing, Bundle, PlatformFee, AppliedFee, BankAccount } from '@arogenpm/sdk';
+import { ScreenHeader, Card, Badge, RemoteImage, Input, Button, PriceText } from '../../src/components/ui';
+import { haptics } from '../../src/lib/haptics';
 
 // Telebirr/CBE Birr gateway integration is on hold — bank transfer (verified
 // via verify.et, with manual review as a fallback) is the only real payment
@@ -25,18 +28,14 @@ function RadioOption({
   label, sub, badge, selected, onPress,
 }: { label: string; sub?: string; badge?: string; selected: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity style={[styles.radioRow, selected && styles.radioRowSelected]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.radioRow, selected && styles.radioRowSelected]} onPress={() => { haptics.select(); onPress(); }} activeOpacity={0.7}>
       <View style={[styles.radioDot, selected && styles.radioDotSelected]}>
         {selected && <View style={styles.radioDotInner} />}
       </View>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={[styles.radioLabel, selected && styles.radioLabelSelected]}>{label}</Text>
-          {badge && (
-            <View style={styles.radioBadge}>
-              <Text style={styles.radioBadgeText}>{badge}</Text>
-            </View>
-          )}
+          {badge && <Badge label={badge} tone="gold" />}
         </View>
         {sub && <Text style={styles.radioSub}>{sub}</Text>}
       </View>
@@ -66,7 +65,7 @@ export default function CheckoutScreen() {
   const router = useRouter();
   const isBundle = type === 'bundle';
 
-  const [listing, setListing] = useState<Listing & { seller?: any } | null>(null);
+  const [listing, setListing] = useState<Listing & { seller?: any; photos?: any[] } | null>(null);
   const [bundle, setBundle] = useState<Bundle & { seller?: any } | null>(null);
   const [fees, setFees] = useState<PlatformFee[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -112,6 +111,7 @@ export default function CheckoutScreen() {
   const appliedFees: AppliedFee[] = calculateFees(itemPrice, fees);
   const serviceFee = appliedFees.reduce((s, f) => s + f.amount, 0);
   const total = itemPrice + deliveryFee + serviceFee;
+  const itemPhoto = !isBundle ? (listing?.photos?.find((p: any) => p.isPrimary) ?? listing?.photos?.[0]) : undefined;
 
   async function placeOrder() {
     if (bankAccounts.length === 0) {
@@ -138,25 +138,20 @@ export default function CheckoutScreen() {
       return;
     }
 
-    router.replace(`/order/${res.data.order.id}` as any);
+    haptics.success();
+    router.replace(`/order/${res.data.order.id}`);
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Checkout</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="Checkout" tone="brand" bordered />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Item */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ITEM</Text>
-          <View style={styles.itemCard}>
-            <View style={styles.itemThumb}><Text style={{ fontSize: 22 }}>📦</Text></View>
+          <Card style={styles.itemCard}>
+            <RemoteImage photoKey={itemPhoto?.cloudinaryKey} style={styles.itemThumb} rounded={BorderRadius.md} />
             <View style={{ flex: 1 }}>
               <Text style={styles.itemTitle} numberOfLines={2}>{itemTitle}</Text>
               <Text style={styles.itemSeller}>
@@ -164,13 +159,11 @@ export default function CheckoutScreen() {
                 {(item as any).seller?.verified ? ' ✓' : ''}
               </Text>
               {!isBundle && offerId && (
-                <View style={styles.offerBadge}>
-                  <Text style={styles.offerBadgeText}>Accepted Offer Price</Text>
-                </View>
+                <Badge label="Accepted Offer Price" tone="gold" style={{ marginTop: 5 }} />
               )}
             </View>
-            <Text style={styles.itemPrice}>{formatETB(itemPrice)}</Text>
-          </View>
+            <PriceText amount={itemPrice} size="sm" />
+          </Card>
         </View>
 
         {/* Payment method — Telebirr/CBE Birr gateway integration is on hold;
@@ -178,16 +171,16 @@ export default function CheckoutScreen() {
             fallback) is the only real payment path for now. */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>PAYMENT METHOD</Text>
-          <View style={styles.optionGroup}>
+          <Card padded={false} style={styles.optionGroup}>
             <RadioOption
               label="Bank Transfer"
               sub="Transfer, then verify instantly with your reference number"
               selected
               onPress={() => {}}
             />
-          </View>
+          </Card>
 
-          <View style={styles.bankNote}>
+          <Card style={styles.bankNote}>
             {bankAccounts.map((acct) => (
               <View key={acct.id} style={styles.bankRow}>
                 <Text style={styles.bankName}>{acct.bankName}</Text>
@@ -198,13 +191,13 @@ export default function CheckoutScreen() {
             <Text style={styles.bankNoteText}>
               After placing your order, transfer the total to one of the accounts above. Enter the transaction reference to verify automatically, or upload a receipt photo for manual review.
             </Text>
-          </View>
+          </Card>
         </View>
 
         {/* Delivery method */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>DELIVERY METHOD</Text>
-          <View style={styles.optionGroup}>
+          <Card padded={false} style={styles.optionGroup}>
             <RadioOption
               label="Meet Up"
               sub="Free · Coordinate directly with seller"
@@ -223,35 +216,37 @@ export default function CheckoutScreen() {
                 />
               </>
             )}
-          </View>
+          </Card>
 
           {!deliverySettings.isEnabled && (
-            <View style={styles.deliveryOffNote}>
+            <Card style={styles.deliveryOffNote}>
               <Text style={styles.deliveryOffNoteText}>
                 Aroge Delivery is not available in your area yet. Meet-up only.
               </Text>
-            </View>
+            </Card>
           )}
 
           {deliveryMethod === 'AROGE_DELIVERY' && (
             <>
               <View style={styles.addressField}>
-                <Text style={styles.label}>Drop-off Address *</Text>
-                <TextInput
-                  style={styles.addressInput}
+                <Input
+                  label="Drop-off Address *"
                   placeholder="House/building, street, sub-city, city"
                   value={dropoffAddress}
                   onChangeText={setDropoffAddress}
-                  placeholderTextColor={colors.textMuted}
                   multiline
+                  style={{ height: 70, paddingTop: 12, textAlignVertical: 'top' }}
                 />
               </View>
-              <View style={styles.approvalNote}>
-                <Text style={styles.approvalNoteTitle}>Requires admin approval</Text>
+              <Card style={styles.approvalNote}>
+                <View style={styles.approvalHeader}>
+                  <Info size={14} color={Colors.gold.dark} />
+                  <Text style={styles.approvalNoteTitle}>Requires admin approval</Text>
+                </View>
                 <Text style={styles.approvalNoteBody}>
-                  Your delivery request will be reviewed. You'll be notified once approved. If rejected, your order continues as meet-up at no extra charge.
+                  Your delivery request will be reviewed. You&apos;ll be notified once approved. If rejected, your order continues as meet-up at no extra charge.
                 </Text>
-              </View>
+              </Card>
             </>
           )}
         </View>
@@ -259,7 +254,7 @@ export default function CheckoutScreen() {
         {/* Order summary */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ORDER SUMMARY</Text>
-          <View style={styles.summaryCard}>
+          <Card style={styles.summaryCard}>
             <FeeRow label="Item price" amount={itemPrice} />
 
             {deliveryFee > 0 && (
@@ -276,13 +271,14 @@ export default function CheckoutScreen() {
 
             <View style={styles.summaryDivider} />
             <FeeRow label="Total" amount={total} isBold />
-          </View>
+          </Card>
 
-          <View style={styles.escrowNote}>
+          <Card style={styles.escrowNote}>
+            <Lock size={14} color={Colors.green.primary} />
             <Text style={styles.escrowNoteText}>
-              🔒 Payment is held in escrow until you confirm receipt. You have 7 days to confirm or open a dispute.
+              Payment is held in escrow until you confirm receipt. You have 7 days to confirm or open a dispute.
             </Text>
-          </View>
+          </Card>
         </View>
       </ScrollView>
 
@@ -290,19 +286,17 @@ export default function CheckoutScreen() {
       <View style={styles.footer}>
         <View style={styles.footerTotal}>
           <Text style={styles.footerTotalLabel}>Total</Text>
-          <Text style={styles.footerTotalValue}>{formatETB(total)}</Text>
+          <PriceText amount={total} size="md" />
         </View>
-        <TouchableOpacity
-          style={[styles.placeBtn, (placing || bankAccounts.length === 0) && { opacity: 0.6 }]}
-          onPress={placeOrder}
-          disabled={placing || bankAccounts.length === 0}
-          activeOpacity={0.85}
-        >
-          {placing
-            ? <ActivityIndicator color={colors.onAction} />
-            : <Text style={styles.placeBtnText}>Place Order</Text>
-          }
-        </TouchableOpacity>
+        <View style={{ flex: 1.5 }}>
+          <Button
+            label="Place Order"
+            variant="primary"
+            loading={placing}
+            disabled={placing || bankAccounts.length === 0}
+            onPress={placeOrder}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -310,38 +304,14 @@ export default function CheckoutScreen() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, backgroundColor: colors.canvas, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    backgroundColor: colors.brand,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  backBtn: { width: 36, alignItems: 'flex-start' },
-  backText: { color: colors.onBrand, fontSize: 20 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
   scroll: { padding: 16, gap: 16, paddingBottom: 40 },
   section: { gap: 8 },
   sectionLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: colors.textMuted, textTransform: 'uppercase' },
-  itemCard: {
-    backgroundColor: colors.surface, borderRadius: 14,
-    padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    borderWidth: 1, borderColor: colors.border,
-  },
-  itemThumb: {
-    width: 48, height: 48, borderRadius: 10,
-    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
-  },
+  itemCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  itemThumb: { width: 48, height: 48 },
   itemTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   itemSeller: { fontSize: 12, color: colors.brand, marginTop: 3 },
-  itemPrice: { fontSize: 16, fontWeight: '800', color: colors.value },
-  offerBadge: {
-    marginTop: 5, alignSelf: 'flex-start',
-    backgroundColor: colors.valueTint, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
-  },
-  offerBadgeText: { fontSize: 10, fontWeight: '700', color: colors.valueText },
-  optionGroup: {
-    backgroundColor: colors.surface, borderRadius: 14,
-    borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
-  },
+  optionGroup: { overflow: 'hidden' },
   radioRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   radioRowSelected: { backgroundColor: colors.brandTint },
   radioDot: {
@@ -354,43 +324,22 @@ const styles = StyleSheet.create({
   radioLabel: { fontSize: 14, fontWeight: '500', color: colors.textBody },
   radioLabelSelected: { color: colors.textPrimary, fontWeight: '600' },
   radioSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  radioBadge: {
-    backgroundColor: colors.valueTint, borderRadius: 6,
-    paddingHorizontal: 6, paddingVertical: 2,
-  },
-  radioBadgeText: { fontSize: 9, fontWeight: '700', color: colors.valueText },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: 44 },
   bankNote: {
-    backgroundColor: colors.brandTint, borderRadius: 10,
-    padding: 12, borderWidth: 1, borderColor: 'rgba(31,122,90,0.15)', gap: 6,
+    backgroundColor: colors.brandTint, gap: 6,
   },
   bankRow: { paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(31,122,90,0.12)', marginBottom: 4 },
   bankName: { fontSize: 13, fontWeight: '700', color: colors.brand },
   bankDetail: { fontSize: 12, color: colors.textBody },
   bankNoteText: { fontSize: 11, color: colors.brand, lineHeight: 16 },
-  deliveryOffNote: {
-    backgroundColor: colors.brandTint, borderRadius: 10,
-    padding: 10, borderWidth: 1, borderColor: 'rgba(31,122,90,0.12)',
-  },
+  deliveryOffNote: { backgroundColor: colors.brandTint },
   deliveryOffNoteText: { fontSize: 12, color: colors.brand },
-  addressField: { marginTop: 10, gap: 6 },
-  label: { fontSize: 12, fontWeight: '700', color: colors.textPrimary },
-  addressInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14,
-    color: colors.textPrimary, backgroundColor: colors.canvas,
-    minHeight: 60, textAlignVertical: 'top',
-  },
-  approvalNote: {
-    backgroundColor: colors.valueTint, borderRadius: 10,
-    padding: 12, borderWidth: 1, borderColor: 'rgba(200,155,60,0.2)', gap: 4,
-  },
+  addressField: { marginTop: 10 },
+  approvalNote: { backgroundColor: colors.valueTint, gap: 4 },
+  approvalHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   approvalNoteTitle: { fontSize: 12, fontWeight: '700', color: colors.valueText },
   approvalNoteBody: { fontSize: 11, color: colors.valueText, lineHeight: 16 },
-  summaryCard: {
-    backgroundColor: colors.surface, borderRadius: 14, padding: 16,
-    gap: 10, borderWidth: 1, borderColor: colors.border,
-  },
+  summaryCard: { gap: 10 },
   feeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   feeLabel: { fontSize: 13, color: colors.textBody },
   feeLabelBold: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
@@ -398,10 +347,9 @@ const styles = StyleSheet.create({
   feeAmountBold: { fontSize: 15, fontWeight: '800', color: colors.value },
   summaryDivider: { height: 1, backgroundColor: colors.border },
   escrowNote: {
-    backgroundColor: colors.brandTint, borderRadius: 10,
-    padding: 12, borderWidth: 1, borderColor: 'rgba(31,122,90,0.15)',
+    backgroundColor: colors.brandTint, flexDirection: 'row', gap: 8, alignItems: 'flex-start',
   },
-  escrowNoteText: { fontSize: 12, color: colors.brand, lineHeight: 17 },
+  escrowNoteText: { flex: 1, fontSize: 12, color: colors.brand, lineHeight: 17 },
   footer: {
     backgroundColor: colors.surface,
     borderTopWidth: 1, borderTopColor: colors.border,
@@ -409,11 +357,4 @@ const styles = StyleSheet.create({
   },
   footerTotal: { flex: 1 },
   footerTotalLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '500' },
-  footerTotalValue: { fontSize: 18, fontWeight: '800', color: colors.value },
-  placeBtn: {
-    flex: 1.5, backgroundColor: colors.action,
-    borderRadius: 14, paddingVertical: 15,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  placeBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
 });

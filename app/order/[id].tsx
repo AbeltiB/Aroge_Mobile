@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, Modal, TextInput,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { CheckCircle2, Circle, Star, Truck, Clock, XCircle, Upload } from 'lucide-react-native';
 import { colors } from '../../src/lib/colors';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Order, EscrowEvent, BankAccount } from '@arogenpm/sdk';
 import { useAppState } from '../../src/context/AppContext';
+import { ScreenHeader, Card, Badge, Button, Input, PriceText, EmptyState, Chip, BottomSheet } from '../../src/components/ui';
+import { haptics } from '../../src/lib/haptics';
 
 const STATUS_STEPS = [
   'PENDING_PAYMENT',
@@ -21,6 +24,16 @@ const STATUS_STEPS = [
 ];
 
 const STARS = [1, 2, 3, 4, 5];
+
+const DELIVERY_STATUS_META: Record<string, { text: string; tone: 'warning' | 'error' | 'brand'; Icon: any }> = {
+  PENDING_APPROVAL: { text: 'Awaiting admin approval', tone: 'warning', Icon: Clock },
+  REJECTED: { text: 'Delivery rejected', tone: 'error', Icon: XCircle },
+  REQUESTED: { text: 'Delivery approved — awaiting courier', tone: 'brand', Icon: CheckCircle2 },
+  ASSIGNED: { text: 'Courier assigned', tone: 'brand', Icon: Truck },
+  IN_TRANSIT: { text: 'In transit', tone: 'brand', Icon: Truck },
+  DELIVERED: { text: 'Delivered', tone: 'brand', Icon: CheckCircle2 },
+  FAILED: { text: 'Delivery failed', tone: 'error', Icon: XCircle },
+};
 
 export default function OrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,6 +48,9 @@ export default function OrderScreen() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewed, setReviewed] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
+  const [disputeModalVisible, setDisputeModalVisible] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [submittingDispute, setSubmittingDispute] = useState(false);
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
@@ -85,6 +101,7 @@ export default function OrderScreen() {
 
     if (res.success) {
       if (res.data.status === 'verified') {
+        haptics.success();
         Alert.alert('Payment Verified', 'Your transfer has been confirmed and is now held in escrow.');
         load();
       } else {
@@ -126,6 +143,7 @@ export default function OrderScreen() {
             const res = await api.patch(`/orders/${order.id}/confirm-receipt`, {});
             setConfirming(false);
             if (res.success) {
+              haptics.success();
               load();
               setReviewModalVisible(true);
             }
@@ -184,23 +202,20 @@ export default function OrderScreen() {
     }
   }
 
-  async function openDispute() {
-    if (!order) return;
-    Alert.prompt(
-      'Open Dispute',
-      'Describe the issue:',
-      async (reason) => {
-        if (!reason) return;
-        const res = await api.post(`/escrow/orders/${order.id}/dispute`, { reason });
-        if (res.success) Alert.alert('Dispute Filed', 'Our team will review within 24 hours.');
-        load();
-      }
-    );
+  async function submitDispute() {
+    if (!order || disputeReason.trim().length < 5) return;
+    setSubmittingDispute(true);
+    const res = await api.post(`/escrow/orders/${order.id}/dispute`, { reason: disputeReason.trim() });
+    setSubmittingDispute(false);
+    setDisputeModalVisible(false);
+    setDisputeReason('');
+    if (res.success) Alert.alert('Dispute Filed', 'Our team will review within 24 hours.');
+    load();
   }
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas }}>
+      <View style={styles.centered}>
         <ActivityIndicator color={colors.brand} />
       </View>
     );
@@ -208,25 +223,21 @@ export default function OrderScreen() {
 
   if (!order) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas }}>
-        <Text style={{ color: colors.textMuted }}>Order not found</Text>
+      <View style={styles.centered}>
+        <EmptyState icon={<XCircle size={28} color={Colors.text.muted} strokeWidth={1.5} />} title="Order not found" />
       </View>
     );
   }
 
   const currentStep = STATUS_STEPS.indexOf(order.orderStatus);
+  const totalPaid = order.amount + ((order as any).deliveryFee ?? 0) + ((order as any).serviceFee ?? 0);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order</Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+      <ScreenHeader title="Order" tone="brand" bordered />
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <View style={styles.card}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Card style={styles.gapCard}>
           <Text style={styles.cardTitle}>{(order as any).listing?.title ?? 'Item'}</Text>
 
           {/* Fee breakdown */}
@@ -252,209 +263,162 @@ export default function OrderScreen() {
             <View style={styles.priceDivider} />
             <View style={styles.priceRow}>
               <Text style={[styles.priceRowLabel, { fontWeight: '700', color: colors.textPrimary }]}>Total paid</Text>
-              <Text style={styles.price}>
-                {formatETB(order.amount + ((order as any).deliveryFee ?? 0) + ((order as any).serviceFee ?? 0))}
-              </Text>
+              <PriceText amount={totalPaid} size="sm" />
             </View>
           </View>
 
           <Text style={styles.meta}>Payment: {order.paymentMethod.replace('_', ' ')}</Text>
           <Text style={styles.meta}>Delivery: {order.deliveryMethod.replace('_', ' ')}</Text>
-        </View>
+        </Card>
 
         {order.paymentMethod === 'BANK_TRANSFER' && order.orderStatus === 'PENDING_PAYMENT' && (
-          <View style={styles.card}>
+          <Card style={styles.gapCard}>
             <Text style={styles.sectionTitle}>Bank Transfer</Text>
             {(order as any).payment?.proofUploadedAt ? (
               <View style={styles.bankPendingNote}>
+                <Clock size={14} color={Colors.gold.dark} />
                 <Text style={styles.bankPendingText}>
-                  ⏳ Proof submitted — waiting for an admin to verify your transfer.
+                  Proof submitted — waiting for an admin to verify your transfer.
                 </Text>
               </View>
             ) : (
               <>
                 <Text style={styles.meta}>
-                  Transfer {formatETB(order.amount + ((order as any).deliveryFee ?? 0) + ((order as any).serviceFee ?? 0))} to the bank account shown at checkout, then enter the transaction reference below to verify automatically.
+                  Transfer {formatETB(totalPaid)} to the bank account shown at checkout, then enter the transaction reference below to verify automatically.
                 </Text>
 
                 {bankAccounts.length > 1 && (
                   <View style={styles.bankPickerRow}>
                     {bankAccounts.map((acct) => (
-                      <TouchableOpacity
+                      <Chip
                         key={acct.id}
-                        style={[styles.bankPickerChip, selectedBankId === acct.id && styles.bankPickerChipSelected]}
+                        label={acct.bankName}
+                        selected={selectedBankId === acct.id}
                         onPress={() => setSelectedBankId(acct.id)}
-                      >
-                        <Text style={[styles.bankPickerChipText, selectedBankId === acct.id && styles.bankPickerChipTextSelected]}>
-                          {acct.bankName}
-                        </Text>
-                      </TouchableOpacity>
+                      />
                     ))}
                   </View>
                 )}
 
                 {selectedBank && (
-                  <View style={{ gap: 8, marginTop: 8 }}>
-                    <TextInput
-                      style={styles.verifyInput}
+                  <View style={{ gap: Spacing[2], marginTop: Spacing[2] }}>
+                    <Input
                       placeholder={selectedBank.bankCode === 'cbebirr' ? 'Receipt number' : 'Transaction reference'}
                       value={reference}
                       onChangeText={setReference}
-                      placeholderTextColor={colors.textMuted}
                       autoCapitalize="characters"
                     />
                     {(selectedBank.bankCode === 'cbe' || selectedBank.bankCode === 'boa') && (
-                      <TextInput
-                        style={styles.verifyInput}
+                      <Input
                         placeholder={selectedBank.bankCode === 'cbe' ? 'Account suffix (last 8 digits)' : 'Account suffix (last 5 digits)'}
                         value={suffix}
                         onChangeText={setSuffix}
                         keyboardType="number-pad"
-                        placeholderTextColor={colors.textMuted}
                       />
                     )}
                     {selectedBank.bankCode === 'cbebirr' && (
-                      <TextInput
-                        style={styles.verifyInput}
+                      <Input
                         placeholder="Phone number used to pay"
                         value={phone}
                         onChangeText={setPhone}
                         keyboardType="phone-pad"
-                        placeholderTextColor={colors.textMuted}
                       />
                     )}
 
                     {!!verifyError && <Text style={styles.verifyErrorText}>{verifyError}</Text>}
 
                     {verifyPending ? (
-                      <TouchableOpacity
-                        style={[styles.confirmBtn, verifying && { opacity: 0.6 }]}
-                        onPress={checkVerificationAgain}
-                        disabled={verifying}
-                      >
-                        {verifying
-                          ? <ActivityIndicator color={colors.onBrand} />
-                          : <Text style={styles.confirmBtnText}>Check Again</Text>}
-                      </TouchableOpacity>
+                      <Button label="Check Again" variant="secondary" loading={verifying} onPress={checkVerificationAgain} />
                     ) : (
-                      <TouchableOpacity
-                        style={[styles.confirmBtn, (verifying || !reference.trim()) && { opacity: 0.6 }]}
+                      <Button
+                        label="Verify Payment"
+                        variant="secondary"
+                        loading={verifying}
+                        disabled={!reference.trim()}
                         onPress={submitVerification}
-                        disabled={verifying || !reference.trim()}
-                      >
-                        {verifying
-                          ? <ActivityIndicator color={colors.onBrand} />
-                          : <Text style={styles.confirmBtnText}>Verify Payment</Text>}
-                      </TouchableOpacity>
+                      />
                     )}
                   </View>
                 )}
 
                 <TouchableOpacity
-                  style={[styles.uploadProofBtn, uploadingProof && { opacity: 0.6 }]}
+                  style={styles.uploadProofBtn}
                   onPress={uploadTransferProof}
                   disabled={uploadingProof}
                 >
                   {uploadingProof
                     ? <ActivityIndicator color={colors.brand} />
-                    : <Text style={styles.uploadProofBtnText}>Or upload a transfer screenshot instead</Text>
+                    : (
+                      <View style={styles.uploadProofRow}>
+                        <Upload size={13} color={colors.brand} />
+                        <Text style={styles.uploadProofBtnText}>Or upload a transfer screenshot instead</Text>
+                      </View>
+                    )
                   }
                 </TouchableOpacity>
               </>
             )}
-          </View>
+          </Card>
         )}
 
-        <View style={styles.card}>
+        <Card style={styles.gapCard}>
           <Text style={styles.sectionTitle}>Order Status</Text>
           <View style={styles.timeline}>
-            {STATUS_STEPS.map((step, i) => (
-              <View key={step} style={styles.timelineRow}>
-                <View style={[
-                  styles.dot,
-                  i <= currentStep && styles.dotActive,
-                  i === currentStep && styles.dotCurrent,
-                ]} />
-                <Text style={[
-                  styles.stepText,
-                  i <= currentStep && styles.stepTextActive,
-                ]}>
-                  {step.replace(/_/g, ' ')}
-                </Text>
-              </View>
-            ))}
+            {STATUS_STEPS.map((step, i) => {
+              const done = i < currentStep;
+              const current = i === currentStep;
+              const StepIcon = done || current ? CheckCircle2 : Circle;
+              return (
+                <View key={step} style={styles.timelineRow}>
+                  <StepIcon
+                    size={18}
+                    color={done || current ? Colors.green.primary : Colors.border.default}
+                    fill={done ? Colors.green.primary : 'transparent'}
+                    strokeWidth={1.75}
+                  />
+                  <Text style={[styles.stepText, (done || current) && styles.stepTextActive]}>
+                    {step.replace(/_/g, ' ')}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
-        </View>
+        </Card>
 
         {order.orderStatus === 'PAID_ESCROWED' && (
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.confirmBtn, confirming && { opacity: 0.6 }]}
-              onPress={confirmReceipt}
-              disabled={confirming}
-            >
-              {confirming
-                ? <ActivityIndicator color={colors.onBrand} />
-                : <Text style={styles.confirmBtnText}>Confirm Receipt</Text>
-              }
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.disputeBtn} onPress={openDispute}>
-              <Text style={styles.disputeBtnText}>Open Dispute</Text>
-            </TouchableOpacity>
+            <Button label="Confirm Receipt" variant="primary" loading={confirming} onPress={confirmReceipt} />
+            <Button label="Open Dispute" variant="danger" onPress={() => setDisputeModalVisible(true)} />
           </View>
         )}
 
         {order.orderStatus === 'COMPLETED' && !reviewed && (
-          <TouchableOpacity
-            style={styles.rateBtn}
+          <Button
+            label="Rate This Order"
+            variant="secondary"
+            icon={<Star size={16} color={Colors.green.primary} fill={Colors.green.primary} />}
             onPress={() => { setRating(0); setComment(''); setReviewModalVisible(true); }}
-          >
-            <Text style={styles.rateBtnText}>⭐ Rate This Order</Text>
-          </TouchableOpacity>
+          />
         )}
 
         {/* Delivery status card */}
-        {(order as any).delivery && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Delivery Status</Text>
-            {(() => {
-              const d = (order as any).delivery;
-              const isPending = d.status === 'PENDING_APPROVAL';
-              const isRejected = d.status === 'REJECTED';
-              return (
-                <View style={[
-                  styles.deliveryStatusCard,
-                  isPending && { backgroundColor: colors.valueTint },
-                  isRejected && { backgroundColor: colors.actionTint },
-                  !isPending && !isRejected && { backgroundColor: colors.brandTint },
-                ]}>
-                  <Text style={[
-                    styles.deliveryStatusText,
-                    isPending && { color: colors.valueText },
-                    isRejected && { color: colors.action },
-                    !isPending && !isRejected && { color: colors.brand },
-                  ]}>
-                    {isPending && '⏳ Awaiting admin approval'}
-                    {isRejected && '✕ Delivery rejected'}
-                    {d.status === 'REQUESTED' && '✓ Delivery approved — awaiting courier'}
-                    {d.status === 'ASSIGNED' && '🚚 Courier assigned'}
-                    {d.status === 'IN_TRANSIT' && '🚚 In transit'}
-                    {d.status === 'DELIVERED' && '✓ Delivered'}
-                    {d.status === 'FAILED' && '✕ Delivery failed'}
-                  </Text>
-                  {isRejected && d.rejectedReason && (
-                    <Text style={{ fontSize: 11, color: colors.action, marginTop: 4 }}>
-                      Reason: {d.rejectedReason}. Order continues as meet-up.
-                    </Text>
-                  )}
-                </View>
-              );
-            })()}
-          </View>
-        )}
+        {(order as any).delivery && (() => {
+          const d = (order as any).delivery;
+          const meta = DELIVERY_STATUS_META[d.status];
+          if (!meta) return null;
+          return (
+            <Card style={styles.gapCard}>
+              <Text style={styles.sectionTitle}>Delivery Status</Text>
+              <Badge label={meta.text} tone={meta.tone} icon={<meta.Icon size={12} color={meta.tone === 'error' ? Colors.error : meta.tone === 'warning' ? Colors.gold.dark : Colors.green.primary} />} size="md" />
+              {d.status === 'REJECTED' && d.rejectedReason && (
+                <Text style={styles.rejectedReason}>Reason: {d.rejectedReason}. Order continues as meet-up.</Text>
+              )}
+            </Card>
+          );
+        })()}
 
         {(order as any).escrowEvents && (order as any).escrowEvents.length > 0 && (
-          <View style={styles.card}>
+          <Card style={styles.gapCard}>
             <Text style={styles.sectionTitle}>Escrow History</Text>
             {(order as any).escrowEvents.map((ev: EscrowEvent) => (
               <View key={ev.id} style={styles.eventRow}>
@@ -462,122 +426,85 @@ export default function OrderScreen() {
                 {ev.note && <Text style={styles.eventNote}>{ev.note}</Text>}
               </View>
             ))}
-          </View>
+          </Card>
         )}
       </ScrollView>
 
-      <Modal
-        visible={reviewModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setReviewModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Rate This Order</Text>
-            <View style={styles.starsRow}>
-              {STARS.map((s) => (
-                <TouchableOpacity key={s} onPress={() => setRating(s)}>
-                  <Text style={[styles.star, s <= rating && styles.starFilled]}>★</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Add a comment (optional)"
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              placeholderTextColor={colors.textMuted}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setReviewModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Skip</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSend, (rating === 0 || submittingReview) && { opacity: 0.6 }]}
-                disabled={rating === 0 || submittingReview}
-                onPress={submitReview}
-              >
-                {submittingReview
-                  ? <ActivityIndicator color={colors.onAction} size="small" />
-                  : <Text style={styles.modalSendText}>Submit</Text>}
-              </TouchableOpacity>
-            </View>
+      <BottomSheet visible={reviewModalVisible} onClose={() => setReviewModalVisible(false)} title="Rate This Order">
+        <View style={styles.starsRow}>
+          {STARS.map((s) => (
+            <TouchableOpacity key={s} onPress={() => { haptics.select(); setRating(s); }} hitSlop={6}>
+              <Star size={32} color={s <= rating ? Colors.gold.primary : Colors.border.default} fill={s <= rating ? Colors.gold.primary : 'transparent'} strokeWidth={1.5} />
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={{ marginTop: Spacing[4], marginBottom: Spacing[5] }}>
+          <Input
+            placeholder="Add a comment (optional)"
+            value={comment}
+            onChangeText={setComment}
+            multiline
+            numberOfLines={3}
+            style={{ height: 80, paddingTop: 12, textAlignVertical: 'top' }}
+          />
+        </View>
+        <View style={styles.modalActions}>
+          <View style={{ flex: 1 }}>
+            <Button label="Skip" variant="ghost" onPress={() => setReviewModalVisible(false)} />
+          </View>
+          <View style={{ flex: 1.4 }}>
+            <Button label="Submit" variant="primary" loading={submittingReview} disabled={rating === 0} onPress={submitReview} />
           </View>
         </View>
-      </Modal>
+      </BottomSheet>
+
+      <BottomSheet visible={disputeModalVisible} onClose={() => setDisputeModalVisible(false)} title="Open Dispute">
+        <Text style={styles.modalSub}>Describe the issue with this order:</Text>
+        <View style={{ marginTop: Spacing[3], marginBottom: Spacing[5] }}>
+          <Input
+            placeholder="What went wrong?"
+            value={disputeReason}
+            onChangeText={setDisputeReason}
+            multiline
+            numberOfLines={3}
+            style={{ height: 90, paddingTop: 12, textAlignVertical: 'top' }}
+            autoFocus
+          />
+        </View>
+        <Button
+          label="Submit Dispute"
+          variant="danger"
+          loading={submittingDispute}
+          disabled={disputeReason.trim().length < 5}
+          onPress={submitDispute}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: colors.brand,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  back: { color: colors.onBrand, fontSize: 15 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: colors.onBrand },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    gap: 4,
-  },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  price: { fontSize: 20, fontWeight: '800', color: colors.value },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas },
+  scroll: { padding: 16, gap: 12 },
+  gapCard: { gap: 4 },
+  cardTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: colors.textPrimary },
   meta: { fontSize: 12, color: colors.textBody },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 },
-  timeline: { gap: 10 },
+  timeline: { gap: 12 },
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  dot: {
-    width: 10, height: 10, borderRadius: 5,
-    backgroundColor: colors.border,
-    borderWidth: 1.5, borderColor: colors.border,
-  },
-  dotActive: { backgroundColor: colors.brandTint, borderColor: colors.brand },
-  dotCurrent: { backgroundColor: colors.brand },
-  stepText: { fontSize: 13, color: colors.textMuted },
+  stepText: { fontSize: 13, color: colors.textMuted, textTransform: 'capitalize' },
   stepTextActive: { color: colors.textPrimary, fontWeight: '500' },
   actions: { gap: 10 },
-  confirmBtn: {
-    backgroundColor: colors.brand,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  confirmBtnText: { color: colors.onBrand, fontSize: 15, fontWeight: '700' },
-  disputeBtn: {
-    backgroundColor: colors.actionTint,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  disputeBtnText: { color: colors.action, fontSize: 14, fontWeight: '600' },
   bankPendingNote: {
-    backgroundColor: colors.valueTint, borderRadius: 10, padding: 12,
+    backgroundColor: colors.valueTint, borderRadius: BorderRadius.md, padding: 12,
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
   },
-  bankPendingText: { fontSize: 13, fontWeight: '600', color: colors.valueText },
+  bankPendingText: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.valueText },
   bankPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  bankPickerChip: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 20,
-    paddingHorizontal: 12, paddingVertical: 6,
-  },
-  bankPickerChipSelected: { borderColor: colors.brand, backgroundColor: colors.brandTint },
-  bankPickerChipText: { fontSize: 12, color: colors.textBody, fontWeight: '500' },
-  bankPickerChipTextSelected: { color: colors.brand, fontWeight: '700' },
-  verifyInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
-    color: colors.textPrimary, backgroundColor: colors.canvas,
-  },
-  verifyErrorText: { fontSize: 12, color: '#d32f2f' },
+  verifyErrorText: { fontSize: 12, color: Colors.error },
   uploadProofBtn: { paddingVertical: 10, alignItems: 'center', marginTop: 4 },
-  uploadProofBtnText: { fontSize: 12, color: colors.brand, fontWeight: '600', textDecorationLine: 'underline' },
+  uploadProofRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  uploadProofBtnText: { fontSize: 12, color: colors.brand, fontWeight: '600' },
   eventRow: { paddingVertical: 4, borderTopWidth: 1, borderTopColor: colors.border },
   eventType: { fontSize: 12, fontWeight: '600', color: colors.brand },
   eventNote: { fontSize: 11, color: colors.textBody, marginTop: 2 },
@@ -586,36 +513,8 @@ const styles = StyleSheet.create({
   priceRowLabel: { fontSize: 12, color: colors.textBody },
   priceRowValue: { fontSize: 12, color: colors.textBody },
   priceDivider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
-  deliveryStatusCard: { borderRadius: 10, padding: 12 },
-  deliveryStatusText: { fontSize: 13, fontWeight: '600' },
-  rateBtn: {
-    backgroundColor: colors.valueTint, borderRadius: 12,
-    paddingVertical: 14, alignItems: 'center',
-  },
-  rateBtnText: { color: colors.valueText, fontSize: 14, fontWeight: '700' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: {
-    backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, gap: 14,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' },
-  starsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  star: { fontSize: 34, color: colors.border },
-  starFilled: { color: colors.value },
-  commentInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14,
-    color: colors.textPrimary, backgroundColor: colors.canvas, minHeight: 70, textAlignVertical: 'top',
-  },
+  rejectedReason: { fontSize: 11, color: Colors.error, marginTop: 6 },
+  starsRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   modalActions: { flexDirection: 'row', gap: 10 },
-  modalCancel: {
-    flex: 1, paddingVertical: 13, borderRadius: 12,
-    backgroundColor: colors.brandTint, alignItems: 'center',
-  },
-  modalCancelText: { color: colors.brand, fontWeight: '600', fontSize: 14 },
-  modalSend: {
-    flex: 1.5, paddingVertical: 13, borderRadius: 12,
-    backgroundColor: colors.action, alignItems: 'center',
-  },
-  modalSendText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
+  modalSub: { fontSize: FontSize.sm, color: colors.textMuted },
 });

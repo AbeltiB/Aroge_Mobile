@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity, StyleSheet,
   ScrollView, KeyboardAvoidingView, Platform, Modal,
-  ActivityIndicator, Alert, Image,
+  Alert, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { User, Store, Check, ChevronLeft, ArrowRight, PartyPopper, Lightbulb, Lock, FileText, CheckCircle2 } from 'lucide-react-native';
 import { colors } from '../lib/colors';
+import { Colors } from '../constants';
 import { api } from '../lib/api';
 import { useAppState } from '../context/AppContext';
 import type { SellerProfile } from '../lib/tokenStorage';
+import { Input, Chip, Button } from './ui';
 
 interface Props {
   visible: boolean;
@@ -104,7 +107,7 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
             {STEPS.map((s, i) => (
               <View key={s} style={[styles.progressStep, i <= step && styles.progressStepActive]}>
                 <View style={[styles.progressDot, i <= step && styles.progressDotActive, i === step && styles.progressDotCurrent]}>
-                  {i < step && <Text style={{ color: colors.onBrand, fontSize: 10, fontWeight: '700' }}>✓</Text>}
+                  {i < step && <Check size={12} color={colors.onBrand} strokeWidth={3} />}
                   {i === step && <Text style={{ color: colors.onBrand, fontSize: 11, fontWeight: '700' }}>{i + 1}</Text>}
                   {i > step && <Text style={{ color: colors.textMuted, fontSize: 11 }}>{i + 1}</Text>}
                 </View>
@@ -128,7 +131,9 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                   onPress={() => setAccountType('personal')}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.typeEmoji}>👤</Text>
+                  <View style={styles.typeIcon}>
+                    <User size={22} color={accountType === 'personal' ? Colors.green.primary : Colors.text.muted} strokeWidth={1.75} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.typeTitle, accountType === 'personal' && styles.typeTitleActive]}>
                       Personal Seller
@@ -143,7 +148,9 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                   onPress={() => setAccountType('business')}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.typeEmoji}>🏪</Text>
+                  <View style={styles.typeIcon}>
+                    <Store size={22} color={accountType === 'business' ? Colors.green.primary : Colors.text.muted} strokeWidth={1.75} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.typeTitle, accountType === 'business' && styles.typeTitleActive]}>
                       Business / Shop
@@ -154,8 +161,9 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 </TouchableOpacity>
 
                 <View style={styles.infoBox}>
+                  <Lightbulb size={15} color={Colors.green.primary} style={styles.infoIcon} />
                   <Text style={styles.infoText}>
-                    💡 Both types can sell on Aroge. Businesses get a verified badge and can list under their brand name.
+                    Both types can sell on Aroge. Businesses get a verified badge and can list under their brand name.
                   </Text>
                 </View>
               </View>
@@ -174,9 +182,8 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 </Text>
 
                 <View style={styles.field}>
-                  <Text style={styles.label}>{accountType === 'personal' ? 'Display Name *' : 'Business Name *'}</Text>
-                  <TextInput
-                    style={styles.input}
+                  <Input
+                    label={accountType === 'personal' ? 'Display Name *' : 'Business Name *'}
                     placeholder={accountType === 'personal' ? 'e.g. Abelti\'s Preloved' : 'e.g. ABC Electronics'}
                     value={businessName}
                     onChangeText={setBusinessName}
@@ -187,36 +194,23 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 <View style={styles.field}>
                   <Text style={styles.label}>Category</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 4 }}>
+                    <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 4, marginTop: 6 }}>
                       {BUSINESS_TYPES.map((t) => (
-                        <TouchableOpacity
-                          key={t}
-                          onPress={() => setBusinessType(t)}
-                          style={[styles.chip, businessType === t && styles.chipActive]}
-                        >
-                          <Text style={[styles.chipText, businessType === t && styles.chipTextActive]}>{t}</Text>
-                        </TouchableOpacity>
+                        <Chip key={t} label={t} selected={businessType === t} onPress={() => setBusinessType(t)} />
                       ))}
                     </View>
                   </ScrollView>
                 </View>
 
                 <View style={styles.field}>
-                  <Text style={styles.label}>City *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Addis Ababa"
-                    value={city}
-                    onChangeText={setCity}
-                  />
+                  <Input label="City *" placeholder="Addis Ababa" value={city} onChangeText={setCity} />
                 </View>
 
                 {accountType === 'business' && (
                   <>
                     <View style={styles.field}>
-                      <Text style={styles.label}>TIN (Tax ID) <Text style={{ color: colors.textMuted }}>— optional</Text></Text>
-                      <TextInput
-                        style={styles.input}
+                      <Input
+                        label="TIN (Tax ID) — optional"
                         placeholder="Business tax identification number"
                         value={tin}
                         onChangeText={setTin}
@@ -243,12 +237,18 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                         {licenseUri ? (
                           <Image source={{ uri: licenseUri }} style={styles.licensePreview} />
                         ) : (
-                          <Text style={styles.licensePickerText}>📄 Upload license photo</Text>
+                          <View style={styles.licensePickerContent}>
+                            <FileText size={18} color={Colors.green.primary} strokeWidth={1.75} />
+                            <Text style={styles.licensePickerText}>Upload license photo</Text>
+                          </View>
                         )}
                       </TouchableOpacity>
-                      <Text style={styles.licenseHint}>
-                        🔒 Stored securely — only Aroge admins can view it, never shown publicly.
-                      </Text>
+                      <View style={styles.hintRow}>
+                        <Lock size={11} color={Colors.text.muted} />
+                        <Text style={styles.licenseHint}>
+                          Stored securely — only Aroge admins can view it, never shown publicly.
+                        </Text>
+                      </View>
                     </View>
                   </>
                 )}
@@ -264,9 +264,8 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 </Text>
 
                 <View style={styles.field}>
-                  <Text style={styles.label}>Your Full Name *</Text>
-                  <TextInput
-                    style={styles.input}
+                  <Input
+                    label="Your Full Name *"
                     placeholder="Your name for buyer communication"
                     value={contactName}
                     onChangeText={setContactName}
@@ -275,9 +274,8 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 </View>
 
                 <View style={styles.field}>
-                  <Text style={styles.label}>Phone Number <Text style={{ color: colors.textMuted }}>— optional</Text></Text>
-                  <TextInput
-                    style={styles.input}
+                  <Input
+                    label="Phone Number — optional"
                     placeholder="+251 9XX XXX XXX"
                     value={phone}
                     onChangeText={setPhone}
@@ -286,8 +284,9 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 </View>
 
                 <View style={styles.infoBox}>
+                  <Lock size={15} color={Colors.green.primary} style={styles.infoIcon} />
                   <Text style={styles.infoText}>
-                    🔒 Your phone number is only shown to buyers after an order is confirmed. It's never public.
+                    Your phone number is only shown to buyers after an order is confirmed. It's never public.
                   </Text>
                 </View>
               </View>
@@ -310,8 +309,9 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
                 </View>
 
                 <View style={styles.infoBox}>
+                  <CheckCircle2 size={15} color={Colors.green.primary} style={styles.infoIcon} />
                   <Text style={styles.infoText}>
-                    ✅ By activating seller mode you agree to Aroge's Seller Terms. All transactions go through Aroge Escrow for your protection.
+                    By activating seller mode you agree to Aroge's Seller Terms. All transactions go through Aroge Escrow for your protection.
                   </Text>
                 </View>
               </View>
@@ -321,24 +321,28 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
           {/* Navigation */}
           <View style={styles.footer}>
             {step > 0 && (
-              <TouchableOpacity style={styles.backBtn} onPress={() => setStep(s => s - 1)}>
-                <Text style={styles.backBtnText}>← Back</Text>
-              </TouchableOpacity>
+              <View style={{ flex: 0.6 }}>
+                <Button
+                  label="Back"
+                  variant="secondary"
+                  onPress={() => setStep(s => s - 1)}
+                  icon={<ChevronLeft size={16} color={Colors.green.primary} />}
+                />
+              </View>
             )}
-            <TouchableOpacity
-              style={[styles.nextBtn, !canAdvance() && styles.nextBtnDisabled, { flex: step > 0 ? 1 : undefined, width: step === 0 ? '100%' : undefined }]}
-              onPress={step < STEPS.length - 1 ? () => setStep(s => s + 1) : handleFinish}
-              disabled={!canAdvance() || saving}
-              activeOpacity={0.85}
-            >
-              {saving ? (
-                <ActivityIndicator color={colors.onAction} />
-              ) : (
-                <Text style={styles.nextBtnText}>
-                  {step < STEPS.length - 1 ? 'Continue →' : '🎉 Activate Seller Mode'}
-                </Text>
-              )}
-            </TouchableOpacity>
+            <View style={{ flex: step > 0 ? 1 : undefined, width: step === 0 ? '100%' : undefined }}>
+              <Button
+                label={step < STEPS.length - 1 ? 'Continue' : 'Activate Seller Mode'}
+                variant="primary"
+                loading={saving}
+                disabled={!canAdvance() || saving}
+                onPress={step < STEPS.length - 1 ? () => setStep(s => s + 1) : handleFinish}
+                icon={step < STEPS.length - 1
+                  ? <ArrowRight size={16} color={Colors.text.onTerracotta} />
+                  : <PartyPopper size={16} color={Colors.text.onTerracotta} />}
+                iconPosition="right"
+              />
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -419,7 +423,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   typeCardActive: { borderColor: colors.brand, backgroundColor: colors.brandTint },
-  typeEmoji: { fontSize: 28 },
+  typeIcon: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center',
+  },
   typeTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   typeTitleActive: { color: colors.brand },
   typeDesc: { fontSize: 12, color: colors.textBody, marginTop: 2, lineHeight: 16 },
@@ -429,41 +436,28 @@ const styles = StyleSheet.create({
   },
   radioActive: { borderColor: colors.brand, backgroundColor: colors.brand },
   infoBox: {
+    flexDirection: 'row',
+    gap: 8,
     backgroundColor: colors.brandTint,
     borderRadius: 12,
     padding: 14,
     borderLeftWidth: 3,
     borderLeftColor: colors.brand,
   },
-  infoText: { fontSize: 13, color: colors.brandDeep, lineHeight: 18 },
+  infoIcon: { marginTop: 1 },
+  infoText: { flex: 1, fontSize: 13, color: colors.brandDeep, lineHeight: 18 },
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  input: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: colors.textPrimary,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1.5, borderColor: colors.border,
-  },
-  chipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
-  chipText: { fontSize: 12, color: colors.textBody, fontWeight: '500' },
-  chipTextActive: { color: colors.onBrand },
   licensePicker: {
     height: 100, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border,
     borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
     backgroundColor: colors.surface,
   },
+  licensePickerContent: { alignItems: 'center', gap: 4 },
   licensePreview: { width: '100%', height: '100%' },
   licensePickerText: { fontSize: 13, color: colors.brand, fontWeight: '600' },
-  licenseHint: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+  hintRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
+  licenseHint: { flex: 1, fontSize: 11, color: colors.textMuted },
   reviewCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -479,23 +473,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  backBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backBtnText: { color: colors.brand, fontSize: 14, fontWeight: '600' },
-  nextBtn: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.action,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  nextBtnDisabled: { backgroundColor: colors.border },
-  nextBtnText: { color: colors.onAction, fontSize: 15, fontWeight: '700' },
 });

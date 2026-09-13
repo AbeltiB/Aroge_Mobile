@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { MessageCircle } from 'lucide-react-native';
 import { colors } from '../../../src/lib/colors';
+import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import type { MessageThread } from '@arogenpm/sdk';
+import { Avatar, EmptyState, SkeletonRow } from '../../../src/components/ui';
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -19,26 +22,33 @@ export default function MessagesScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Messages</Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
+        <View style={{ paddingTop: 8 }}>
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+        </View>
       ) : (
         <FlatList
           data={threads}
           keyExtractor={(item) => `${item.listingId}-${item.otherUserId}`}
-          contentContainerStyle={{ padding: 12, gap: 8 }}
+          contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={styles.empty}>No messages yet. Make an offer to start chatting!</Text>
+            <EmptyState
+              icon={<MessageCircle size={28} color={Colors.text.muted} strokeWidth={1.5} />}
+              title="No messages yet"
+              subtitle="Make an offer to start chatting!"
+            />
           }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.thread}
+              activeOpacity={0.85}
               onPress={() => router.push({
-                pathname: '/messages/[listingId]/[otherUserId]' as any,
+                pathname: '/messages/[listingId]/[otherUserId]',
                 params: {
                   listingId: item.listingId,
                   otherUserId: item.otherUserId,
@@ -47,6 +57,7 @@ export default function MessagesScreen() {
                 },
               })}
             >
+              <Avatar name={(item as any).otherUser?.name} size={46} />
               <View style={styles.threadLeft}>
                 <Text style={styles.otherUserName} numberOfLines={1}>
                   {(item as any).otherUser?.name ?? 'User'}
@@ -72,33 +83,31 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.canvas },
   header: {
     backgroundColor: colors.brand,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FontFamily.serif,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
     color: colors.onBrand,
   },
-  empty: {
-    textAlign: 'center',
-    color: colors.textMuted,
-    marginTop: 40,
-    fontSize: 14,
-    paddingHorizontal: 32,
-    lineHeight: 20,
-  },
+  list: { padding: Spacing[3], gap: 8 },
   thread: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: BorderRadius.lg,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Spacing[3],
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  threadLeft: { flex: 1, marginRight: 8 },
+  threadLeft: { flex: 1 },
   otherUserName: {
     fontSize: 14,
     fontWeight: '700',
