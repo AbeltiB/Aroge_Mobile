@@ -24,7 +24,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.aroge.mobile"
+      "package": "com.aroge.mobile",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -64,10 +67,11 @@
       "imgproxyUrl": "https://media.aroge.online",
       "telegramBotUsername": "aroge_ecommerce_bot",
       "deepLinkScheme": "aroge",
+      "router": {},
       "eas": {
-        "projectId": "replace-with-your-eas-project-id"
+        "projectId": "c27d5488-8985-4739-bec2-5dc438950b8e"
       }
     },
-    "owner": "replace-with-your-expo-username"
+    "owner": "abeltib"
   }
 }
