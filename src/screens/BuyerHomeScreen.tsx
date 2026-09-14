@@ -5,13 +5,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Bell, Search as SearchIcon, ShoppingBag } from 'lucide-react-native';
-import { colors } from '../lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../constants';
 import { api } from '../lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing, Category } from '@arogenpm/sdk';
 import { useAppState } from '../context/AppContext';
-import { RemoteImage, Badge, Input, EmptyState, SkeletonListingCard, Chip } from '../components/ui';
+import { Input, EmptyState, SkeletonListingCard, Chip, ProductCard } from '../components/ui';
 import { haptics } from '../lib/haptics';
 
 interface ListingsPage { items: (Listing & { category?: Category; photos?: { cloudinaryKey: string; isPrimary?: boolean }[] })[]; total: number }
@@ -61,15 +60,15 @@ export default function BuyerHomeScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      {/* Header */}
+      {/* App bar */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Aroge</Text>
-          <Text style={styles.headerSub}>አሮጌ · Pre-Loved Marketplace</Text>
+          <Text style={styles.eyebrow}>አሮጌ</Text>
+          <Text style={styles.headerTitle}>Discover</Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.iconBtn} hitSlop={8}>
-            <Bell size={22} color={colors.onBrand} strokeWidth={2} />
+            <Bell size={20} color={Colors.ink} strokeWidth={2} />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
@@ -81,7 +80,7 @@ export default function BuyerHomeScreen() {
             onPress={() => router.push('/(app)/(tabs)/search')}
             hitSlop={8}
           >
-            <SearchIcon size={22} color={colors.onBrand} strokeWidth={2} />
+            <SearchIcon size={20} color={Colors.ink} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -102,7 +101,7 @@ export default function BuyerHomeScreen() {
       {/* Category chips */}
       <FlatList
         horizontal
-        data={[{ id: '', nameEn: 'All', nameAm: 'ሁሉም', slug: 'all', iconKey: null } as unknown as Category, ...categories]}
+        data={[{ id: '', nameEn: 'For you', nameAm: 'ሁሉም', slug: 'all', iconKey: null } as unknown as Category, ...categories]}
         keyExtractor={(c) => c.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.catList}
@@ -127,7 +126,7 @@ export default function BuyerHomeScreen() {
           numColumns={2}
           contentContainerStyle={styles.grid}
           columnWrapperStyle={styles.gridRow}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.green.primary} />}
           ListEmptyComponent={
             <EmptyState
               icon={<ShoppingBag size={30} color={Colors.text.muted} strokeWidth={1.5} />}
@@ -137,27 +136,16 @@ export default function BuyerHomeScreen() {
           }
           renderItem={({ item: listing }) => {
             const photo = listing.photos?.find((p) => p.isPrimary) ?? listing.photos?.[0];
+            const meta = [CONDITION_LABELS[listing.condition] ?? listing.condition, listing.city].filter(Boolean).join(' · ');
             return (
-              <TouchableOpacity
-                style={styles.listingCard}
+              <ProductCard
+                photoKey={photo?.cloudinaryKey}
+                title={listing.title}
+                meta={meta}
+                priceLabel={formatETB(listing.price)}
+                badge={listing.negotiable ? { label: 'OFFER', tone: 'gold' } : undefined}
                 onPress={() => router.push(`/listing/${listing.id}`)}
-                activeOpacity={0.9}
-              >
-                <View style={styles.listingPhoto}>
-                  <RemoteImage photoKey={photo?.cloudinaryKey} style={StyleSheet.absoluteFill} />
-                  {listing.negotiable && (
-                    <Badge label="Offer" tone="gold" style={styles.negotiableBadge} />
-                  )}
-                </View>
-                <View style={styles.listingInfo}>
-                  <Text style={styles.listingTitle} numberOfLines={2}>{listing.title}</Text>
-                  <Text style={styles.listingPrice}>{formatETB(listing.price)}</Text>
-                  <View style={styles.listingMeta}>
-                    <Badge label={CONDITION_LABELS[listing.condition] ?? listing.condition} tone="brand" />
-                    {listing.city && <Text style={styles.listingCity} numberOfLines={1}>{listing.city}</Text>}
-                  </View>
-                </View>
-              </TouchableOpacity>
+              />
             );
           }}
         />
@@ -166,23 +154,14 @@ export default function BuyerHomeScreen() {
   );
 }
 
-const cardShadow = {
-  shadowColor: Colors.green.dark,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 8,
-  elevation: 2,
-};
-
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
+  root: { flex: 1, backgroundColor: Colors.cream.background },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: colors.brand,
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
+    paddingHorizontal: Spacing[4], paddingVertical: Spacing[3],
   },
-  headerTitle: { fontFamily: FontFamily.serif, fontSize: 22, fontWeight: '800', color: colors.onBrand, letterSpacing: -0.5 },
-  headerSub: { fontSize: 11, color: 'rgba(243,239,231,0.6)', marginTop: 1 },
+  eyebrow: { fontFamily: FontFamily.interSemibold, fontSize: 11, color: Colors.inkSoft },
+  headerTitle: { fontFamily: FontFamily.display, fontSize: 18, color: Colors.ink, marginTop: 1 },
   headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   searchWrap: { paddingHorizontal: 12, paddingVertical: 8 },
   catList: { paddingHorizontal: 12, paddingVertical: 6, gap: 8 },
@@ -190,26 +169,16 @@ const styles = StyleSheet.create({
   gridRow: { gap: 10 },
   skeletonRow: { flexDirection: 'row', flexWrap: 'wrap' },
   skeletonCol: { width: '48%', marginBottom: 10 },
-  listingCard: {
-    flex: 1, backgroundColor: colors.surface,
-    borderRadius: BorderRadius.lg, overflow: 'hidden',
-    ...cardShadow,
+  iconBtn: {
+    width: 34, height: 34, borderRadius: BorderRadius.full,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)', position: 'relative',
   },
-  listingPhoto: { width: '100%', height: 130, position: 'relative', backgroundColor: Colors.cream.subtle },
-  negotiableBadge: {
-    position: 'absolute', top: 8, right: 8,
-  },
-  listingInfo: { padding: 10, gap: 3 },
-  listingTitle: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, lineHeight: 17 },
-  listingPrice: { fontFamily: FontFamily.serif, fontSize: 15, fontWeight: FontWeight.bold, color: colors.value, marginTop: 1 },
-  listingMeta: { flexDirection: 'row', gap: 6, marginTop: 2, alignItems: 'center' },
-  listingCity: { fontSize: 10, color: colors.textMuted, flexShrink: 1 },
-  iconBtn: { padding: 6, position: 'relative' },
   badge: {
-    position: 'absolute', top: 0, right: 0,
+    position: 'absolute', top: -2, right: -2,
     backgroundColor: Colors.terracotta.primary, borderRadius: 9,
     minWidth: 18, height: 18, paddingHorizontal: 3,
     alignItems: 'center', justifyContent: 'center',
   },
-  badgeText: { fontSize: 10, fontWeight: '700', color: '#ffffff' },
+  badgeText: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.interBold, color: '#ffffff' },
 });

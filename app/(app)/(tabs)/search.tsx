@@ -3,13 +3,12 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Search as SearchIcon, SlidersHorizontal, PackageSearch } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import { ItemCondition } from '@arogenpm/sdk';
 import type { Listing, Category } from '@arogenpm/sdk';
-import { RemoteImage, Input, EmptyState, SkeletonRow, Chip, BottomSheet, Button } from '../../../src/components/ui';
+import { Input, EmptyState, SkeletonListingCard, Chip, BottomSheet, Button, ProductCard } from '../../../src/components/ui';
 
 interface SearchResults { items: (Listing & { category?: Category; photos?: { cloudinaryKey: string; isPrimary?: boolean }[] })[]; total: number }
 
@@ -80,12 +79,10 @@ export default function SearchScreen() {
     setDraftFilters(EMPTY_FILTERS);
   }
 
+  const sortLabel = SORTS.find((s) => s.key === filters.sort)?.label ?? 'Newest';
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search</Text>
-      </View>
-
       <View style={styles.searchRow}>
         <View style={{ flex: 1 }}>
           <Input
@@ -100,7 +97,7 @@ export default function SearchScreen() {
           />
         </View>
         <TouchableOpacity style={styles.filterBtn} onPress={openFilters}>
-          <SlidersHorizontal size={16} color={colors.brand} />
+          <SlidersHorizontal size={16} color={Colors.green.primary} />
           {activeFilterCount > 0 && (
             <View style={styles.filterCount}>
               <Text style={styles.filterCountText}>{activeFilterCount}</Text>
@@ -110,14 +107,28 @@ export default function SearchScreen() {
       </View>
 
       {loading ? (
-        <View style={{ paddingTop: 8 }}>
-          {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+        <View style={[styles.list, styles.skeletonRow]}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <View key={i} style={styles.skeletonCol}>
+              <SkeletonListingCard />
+            </View>
+          ))}
         </View>
       ) : (
         <FlatList
           data={results}
           keyExtractor={(item) => item.id}
+          numColumns={2}
           contentContainerStyle={styles.list}
+          columnWrapperStyle={styles.listRow}
+          ListHeaderComponent={
+            searched && results.length > 0 ? (
+              <View style={styles.resultsHeader}>
+                <Text style={styles.resultsCount}>{results.length} RESULTS</Text>
+                <Text style={styles.resultsSort}>Sort: {sortLabel}</Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <EmptyState
               icon={<PackageSearch size={28} color={Colors.text.muted} strokeWidth={1.5} />}
@@ -127,19 +138,15 @@ export default function SearchScreen() {
           }
           renderItem={({ item }) => {
             const photo = item.photos?.find((p) => p.isPrimary) ?? item.photos?.[0];
+            const meta = [item.condition?.replace('_', ' '), item.city].filter(Boolean).join(' · ');
             return (
-              <TouchableOpacity
-                style={styles.row}
+              <ProductCard
+                photoKey={photo?.cloudinaryKey}
+                title={item.title}
+                meta={meta}
+                priceLabel={formatETB(item.price)}
                 onPress={() => router.push(`/listing/${item.id}`)}
-                activeOpacity={0.85}
-              >
-                <RemoteImage photoKey={photo?.cloudinaryKey} style={styles.thumb} rounded={BorderRadius.md} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.price}>{formatETB(item.price)}</Text>
-                  {item.city && <Text style={styles.meta}>{item.city}</Text>}
-                </View>
-              </TouchableOpacity>
+              />
             );
           }}
         />
@@ -218,12 +225,10 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
-  header: { backgroundColor: colors.brand, paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontFamily: FontFamily.serif, fontSize: 22, fontWeight: '700', color: colors.onBrand },
-  searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginVertical: 8, gap: 8 },
+  root: { flex: 1, backgroundColor: Colors.cream.background },
+  searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginTop: 8, marginBottom: 4, gap: 8 },
   filterBtn: {
-    backgroundColor: colors.brandTint, borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.green.tint, borderRadius: BorderRadius.lg,
     width: 52, height: 52, alignItems: 'center', justifyContent: 'center',
     position: 'relative',
   },
@@ -233,19 +238,18 @@ const styles = StyleSheet.create({
     minWidth: 18, height: 18, paddingHorizontal: 3,
     alignItems: 'center', justifyContent: 'center',
   },
-  filterCountText: { fontSize: 10, fontWeight: '700', color: '#ffffff' },
-  list: { padding: 12, gap: 8 },
-  row: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: colors.border,
-    marginBottom: 8,
+  filterCountText: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.interBold, color: '#ffffff' },
+  list: { padding: 12, gap: 10 },
+  listRow: { gap: 10 },
+  skeletonRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  skeletonCol: { width: '48%', marginBottom: 10 },
+  resultsHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: Spacing[2], width: '100%',
   },
-  thumb: { width: 56, height: 56 },
-  title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  price: { fontFamily: FontFamily.serif, fontSize: 14, fontWeight: FontWeight.bold, color: colors.value, marginTop: 2 },
-  meta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  filterLabel: { fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: Spacing[4], marginBottom: Spacing[2] },
+  resultsCount: { fontFamily: FontFamily.interBold, fontSize: FontSize.xs, color: Colors.ink, letterSpacing: 0.4 },
+  resultsSort: { fontFamily: FontFamily.interSemibold, fontSize: 11.5, color: Colors.green.primary },
+  filterLabel: { fontFamily: FontFamily.interBold, fontSize: FontSize.sm, color: Colors.text.primary, marginTop: Spacing[4], marginBottom: Spacing[2] },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: Spacing[6], marginBottom: Spacing[2] },
 });
