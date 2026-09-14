@@ -1,10 +1,10 @@
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, ShieldCheck, BadgeCheck, Zap } from 'lucide-react-native';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius, LetterSpacing } from '../../src/constants';
-import { Button } from '../../src/components/ui';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius, LetterSpacing } from '../../src/constants';
+import { Button, Logo } from '../../src/components/ui';
 import { loginWithTelegram } from '../../src/lib/auth';
 import { useAppState } from '../../src/context/AppContext';
 
@@ -47,8 +47,7 @@ export default function LoginScreen() {
       >
         <View style={styles.hero}>
           <View style={styles.markBackdrop}>
-            {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
-            <Image source={require('../../assets/adaptive-icon.png')} style={styles.mark} resizeMode="contain" />
+            <Logo size={96} background="cream" />
           </View>
           <Text style={styles.wordmark}>AROGE</Text>
           <Text style={styles.subtitle}>አሮጌ — Ethiopia&apos;s Pre-Loved Marketplace</Text>
@@ -112,19 +111,14 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 4,
   },
-  mark: {
-    width: 96,
-    height: 96,
-  },
   wordmark: {
-    fontFamily: FontFamily.serif,
+    fontFamily: FontFamily.display,
     fontSize: FontSize['3xl'],
-    fontWeight: FontWeight.bold,
     color: Colors.green.primary,
     letterSpacing: LetterSpacing.widest,
   },
   subtitle: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interRegular,
     fontSize: FontSize.sm,
     color: Colors.text.muted,
     marginTop: Spacing[2],
@@ -149,10 +143,9 @@ const styles = StyleSheet.create({
   },
   valueText: {
     flex: 1,
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interMedium,
     fontSize: FontSize.base,
     color: Colors.text.primary,
-    fontWeight: FontWeight.medium,
   },
   footer: {
     paddingHorizontal: Spacing[6],
@@ -160,13 +153,13 @@ const styles = StyleSheet.create({
     gap: Spacing[3],
   },
   errorText: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interRegular,
     fontSize: FontSize.sm,
     color: Colors.error,
     textAlign: 'center',
   },
   legal: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interRegular,
     fontSize: FontSize.xs,
     color: Colors.text.muted,
     textAlign: 'center',

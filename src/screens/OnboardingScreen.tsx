@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { ShieldCheck, Lock, Store } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedScrollHandler, interpolate, Extrapolation, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../constants';
 import { Button } from '../components/ui';
 import { haptics } from '../lib/haptics';
 import { useAppState } from '../context/AppContext';
@@ -127,9 +127,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   skipText: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interSemibold,
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
     color: Colors.text.muted,
   },
   page: { width, paddingHorizontal: Spacing[8], alignItems: 'center', justifyContent: 'center' },
@@ -142,14 +141,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing[8],
   },
   title: {
-    fontFamily: FontFamily.serif,
+    fontFamily: FontFamily.display,
     fontSize: FontSize['2xl'],
-    fontWeight: FontWeight.bold,
     color: Colors.text.primary,
     textAlign: 'center',
   },
   text: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interRegular,
     fontSize: FontSize.base,
     color: Colors.text.secondary,
     textAlign: 'center',

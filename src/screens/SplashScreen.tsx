@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
-import { Colors, FontFamily, FontSize, FontWeight, LetterSpacing } from '../constants';
+import { Colors, FontFamily, FontSize, LetterSpacing } from '../constants';
+import { Logo } from '../components/ui';
 
 export default function SplashScreen() {
   const scale = useSharedValue(0.85);
@@ -26,12 +27,13 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.root}>
-      <Animated.View style={markStyle}>
-        {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
-        <Image source={require('../../assets/adaptive-icon.png')} style={styles.mark} resizeMode="contain" />
+      <Animated.View style={[styles.tile, markStyle]}>
+        <Logo size={64} background="cream" />
       </Animated.View>
-      <Animated.Text style={[styles.wordmark, taglineStyle]}>AROGE</Animated.Text>
-      <Animated.Text style={[styles.subtitle, taglineStyle]}>Trusted buying and selling</Animated.Text>
+      <Animated.View style={taglineStyle}>
+        <Text style={styles.wordmark}>AROGE</Text>
+        <Text style={styles.subtitle}>SECONDHAND, FIRST CHOICE</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -39,26 +41,26 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.cream.background,
+    backgroundColor: Colors.green.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mark: {
-    width: 140,
-    height: 140,
+  tile: {
+    marginBottom: 18,
   },
   wordmark: {
-    marginTop: 20,
-    fontFamily: FontFamily.serif,
+    fontFamily: FontFamily.display,
     fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.green.primary,
-    letterSpacing: LetterSpacing.widest,
+    color: Colors.cream.background,
+    letterSpacing: LetterSpacing.wider,
+    textAlign: 'center',
   },
   subtitle: {
     marginTop: 6,
-    fontFamily: FontFamily.sans,
-    fontSize: FontSize.sm,
-    color: Colors.text.muted,
+    fontFamily: FontFamily.interSemibold,
+    fontSize: 11,
+    color: 'rgba(243,239,231,0.65)',
+    letterSpacing: LetterSpacing.wide,
+    textAlign: 'center',
   },
 });
