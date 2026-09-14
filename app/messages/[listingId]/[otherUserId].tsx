@@ -7,8 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Send, MessageCircle } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
-import { Colors, BorderRadius, Spacing } from '../../../src/constants';
+import { Colors, FontFamily, BorderRadius, Spacing } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import { useAppState } from '../../../src/context/AppContext';
 import type { Message } from '@arogenpm/sdk';
@@ -88,11 +87,11 @@ export default function ConversationScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top', 'bottom']}>
-      <ScreenHeader title={name || 'Chat'} subtitle={listingTitle} tone="brand" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top', 'bottom']}>
+      <ScreenHeader title={name || 'Chat'} subtitle={listingTitle} tone="surface" bordered />
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
+        <ActivityIndicator style={{ marginTop: 40 }} color={Colors.green.primary} />
       ) : (
         <FlatList
           ref={listRef}
@@ -146,7 +145,7 @@ export default function ConversationScreen() {
             value={text}
             onChangeText={setText}
             placeholder="Type a message…"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={Colors.text.muted}
             multiline
           />
           <IconButton
@@ -168,26 +167,26 @@ const styles = StyleSheet.create({
   bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start' },
   bubbleRowMine: { justifyContent: 'flex-end' },
   bubble: { maxWidth: '78%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 9 },
-  bubbleTheirs: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  bubbleMine: { backgroundColor: colors.brand },
+  bubbleTheirs: { backgroundColor: Colors.cream.surface, borderWidth: 1, borderColor: Colors.line },
+  bubbleMine: { backgroundColor: Colors.green.primary },
   bubbleMedia: { padding: 4, overflow: 'hidden' },
   bubbleImage: { width: 200, height: 200 },
-  bubbleTextTheirs: { color: colors.textPrimary, fontSize: 14 },
-  bubbleTextMine: { color: colors.onBrand, fontSize: 14 },
+  bubbleTextTheirs: { fontFamily: FontFamily.interRegular, color: Colors.ink, fontSize: 14 },
+  bubbleTextMine: { fontFamily: FontFamily.interRegular, color: Colors.text.onGreen, fontSize: 14 },
   quickReply: {
-    backgroundColor: colors.brandTint, borderRadius: 16,
+    backgroundColor: Colors.green.tint, borderRadius: 16,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  quickReplyText: { fontSize: 12, color: colors.brand, fontWeight: '500' },
+  quickReplyText: { fontFamily: FontFamily.interMedium, fontSize: 12, color: Colors.green.primary },
   inputRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing[2],
     paddingHorizontal: 12, paddingBottom: 10, paddingTop: 4,
-    backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
+    backgroundColor: Colors.cream.surface, borderTopWidth: 1, borderTopColor: Colors.line,
   },
   input: {
-    flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
-    color: colors.textPrimary, backgroundColor: colors.canvas, maxHeight: 100,
+    flex: 1, borderWidth: 1.5, borderColor: Colors.line, borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: FontFamily.interRegular,
+    color: Colors.ink, backgroundColor: Colors.cream.background, maxHeight: 100,
   },
   sendActive: { backgroundColor: Colors.terracotta.primary },
   sendDisabled: { backgroundColor: Colors.terracotta.primary, opacity: 0.5 },
