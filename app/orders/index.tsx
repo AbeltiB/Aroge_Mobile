@@ -3,21 +3,22 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ShoppingBag } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, Spacing, BorderRadius } from '../../src/constants';
+import { Colors, FontFamily, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Order } from '@arogenpm/sdk';
 import { ScreenHeader, Badge, EmptyState, SkeletonRow, type BadgeTone } from '../../src/components/ui';
 
 function formatStatus(status: string): string {
-  return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Paid Escrowed', 'In Escrow');
+  return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()).replace('Paid Escrowed', 'Held in Escrow');
 }
 
 const STATUS_TONE: Record<string, BadgeTone> = {
-  PAID_ESCROWED: 'success',
-  COMPLETED: 'success',
-  DISPUTED: 'error',
+  PAID_ESCROWED: 'gold',
+  IN_TRANSIT: 'gold',
+  DELIVERED: 'brand',
+  COMPLETED: 'neutral',
+  DISPUTED: 'action',
   PENDING_PAYMENT: 'warning',
 };
 
@@ -34,7 +35,7 @@ export default function MyOrdersScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
       <ScreenHeader title="My Orders" showBack={false} bordered />
 
       {loading ? (
@@ -74,12 +75,12 @@ export default function MyOrdersScreen() {
 const styles = StyleSheet.create({
   list: { padding: Spacing[3], gap: 8 },
   row: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 14,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg, padding: 14,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderColor: colors.border,
+    borderWidth: 1, borderColor: Colors.line,
     marginBottom: 8,
   },
-  title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  date: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  amount: { fontSize: 14, fontWeight: '800', color: colors.value },
+  title: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink },
+  date: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 2 },
+  amount: { fontFamily: FontFamily.display, fontSize: 14, color: Colors.gold.primary },
 });

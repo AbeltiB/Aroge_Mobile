@@ -3,11 +3,10 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Handshake } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, Spacing } from '../../src/constants';
+import { Colors, FontFamily, Spacing } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
-import { ScreenHeader, Card, Badge, Button, Input, EmptyState, SkeletonRow, BottomSheet, type BadgeTone } from '../../src/components/ui';
+import { ScreenHeader, Card, Badge, Button, Input, EmptyState, SkeletonRow, BottomSheet, PriceText, type BadgeTone } from '../../src/components/ui';
 
 interface OfferRow {
   id: string;
@@ -67,8 +66,8 @@ export default function BuyingOffersScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="My Offers" tone="brand" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="My Offers" tone="surface" bordered />
 
       {loading ? (
         <View style={{ paddingTop: 8 }}>
@@ -94,13 +93,13 @@ export default function BuyingOffersScreen() {
               <Card style={styles.card}>
                 <TouchableOpacity onPress={() => router.push(`/listing/${item.listing.id}`)}>
                   <Text style={styles.listingTitle} numberOfLines={1}>{item.listing.title}</Text>
-                  <Text style={styles.listingPrice}>Listed at {formatETB(item.listing.price)}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.offerRow}>
-                  <Text style={styles.offerAmount}>
-                    {isCounteredToBuyer ? 'Seller countered: ' : 'Your offer: '}{formatETB(item.amount)}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.offerLabel}>{isCounteredToBuyer ? 'Seller countered' : 'Your offer'}</Text>
+                    <PriceText amount={item.amount} originalAmount={item.listing.price} size="md" />
+                  </View>
                   <Badge label={meta.label} tone={meta.tone} />
                 </View>
 
@@ -171,10 +170,9 @@ export default function BuyingOffersScreen() {
 const styles = StyleSheet.create({
   list: { padding: Spacing[3], gap: 10 },
   card: { gap: 8, marginBottom: 10 },
-  listingTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  listingPrice: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
-  offerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  offerAmount: { fontSize: 14, fontWeight: '700', color: colors.value },
+  listingTitle: { fontFamily: FontFamily.interBold, fontSize: 14, color: Colors.ink },
+  offerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  offerLabel: { fontFamily: FontFamily.interRegular, fontSize: 11.5, color: Colors.inkSoft, marginBottom: 2 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  modalSub: { fontSize: 13, color: colors.textMuted },
+  modalSub: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft },
 });

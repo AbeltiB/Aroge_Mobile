@@ -3,11 +3,10 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Handshake } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, Spacing } from '../../src/constants';
+import { Colors, FontFamily, Spacing } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
-import { ScreenHeader, Card, Button, Input, EmptyState, SkeletonRow, BottomSheet } from '../../src/components/ui';
+import { ScreenHeader, Card, Button, Input, EmptyState, SkeletonRow, BottomSheet, PriceText } from '../../src/components/ui';
 
 interface OfferItem {
   id: string;
@@ -49,8 +48,8 @@ export default function SellerOffersScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="Offers" subtitle="Pending offers on your listings" tone="action" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="Offers" subtitle="Pending offers on your listings" tone="surface" bordered />
 
       {loading ? (
         <View style={{ paddingTop: 8 }}>
@@ -74,12 +73,11 @@ export default function SellerOffersScreen() {
               <Card style={styles.card}>
                 <TouchableOpacity onPress={() => router.push(`/listing/${item.listing.id}`)}>
                   <Text style={styles.listingTitle} numberOfLines={1}>{item.listing.title}</Text>
-                  <Text style={styles.listingPrice}>Listed at {formatETB(item.listing.price)}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.offerRow}>
-                  <Text style={styles.buyerName}>{item.buyer.name}</Text>
-                  <Text style={styles.offerAmount}>offered {formatETB(item.amount)}</Text>
+                  <Text style={styles.buyerName}>{item.buyer.name} offered</Text>
+                  <PriceText amount={item.amount} originalAmount={item.listing.price} size="md" />
                 </View>
 
                 <View style={styles.actions}>
@@ -139,11 +137,9 @@ export default function SellerOffersScreen() {
 const styles = StyleSheet.create({
   list: { padding: Spacing[3], gap: 10 },
   card: { gap: 8, marginBottom: 10 },
-  listingTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  listingPrice: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
-  offerRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  buyerName: { fontSize: 13, fontWeight: '600', color: colors.brand },
-  offerAmount: { fontSize: 15, fontWeight: '800', color: colors.value },
+  listingTitle: { fontFamily: FontFamily.interBold, fontSize: 14, color: Colors.ink },
+  offerRow: { gap: 3, marginTop: 2 },
+  buyerName: { fontFamily: FontFamily.interSemibold, fontSize: 12.5, color: Colors.green.primary },
   actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  modalSub: { fontSize: 13, color: colors.textMuted },
+  modalSub: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft },
 });

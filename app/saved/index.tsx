@@ -3,8 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, BorderRadius, Spacing } from '../../src/constants';
+import { Colors, FontFamily, BorderRadius, Spacing } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
@@ -31,7 +30,7 @@ export default function SavedItemsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
       <ScreenHeader title="Saved Items" showBack={false} bordered />
 
       {loading ? (
@@ -77,13 +76,13 @@ export default function SavedItemsScreen() {
 const styles = StyleSheet.create({
   list: { padding: Spacing[3], gap: 8 },
   row: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 12,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderWidth: 1, borderColor: colors.border,
+    borderWidth: 1, borderColor: Colors.line,
     marginBottom: 8,
   },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   thumb: { width: 56, height: 56 },
-  title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  price: { fontSize: 14, fontWeight: '800', color: colors.value, marginTop: 2 },
+  title: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink },
+  price: { fontFamily: FontFamily.display, fontSize: 14, color: Colors.gold.primary, marginTop: 2 },
 });
