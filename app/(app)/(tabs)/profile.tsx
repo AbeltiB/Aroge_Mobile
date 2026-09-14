@@ -9,8 +9,7 @@ import {
   Package, ShoppingBag, Handshake, MessageCircle, Heart,
   Bell, Lock, FileText, HelpCircle, ChevronRight, Store, RotateCcw, Rocket,
 } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../../src/constants';
 import { useAppState } from '../../../src/context/AppContext';
 import { useTranslation, type Locale } from '../../../src/i18n';
 import SellerRegistrationWizard from '../../../src/components/SellerRegistrationWizard';
@@ -66,7 +65,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
       <SellerRegistrationWizard
         visible={wizardVisible}
         onComplete={handleWizardComplete}
@@ -100,7 +99,7 @@ export default function ProfileScreen() {
             <Switch
               value={sellerMode}
               onValueChange={handleSellerToggle}
-              trackColor={{ true: colors.brand, false: colors.border }}
+              trackColor={{ true: Colors.green.primary, false: Colors.line }}
               thumbColor="#fff"
               disabled={toggling}
             />
@@ -184,41 +183,41 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, gap: 12, paddingBottom: 40 },
   profileHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: colors.brand, borderRadius: BorderRadius.xl, padding: 18,
+    backgroundColor: Colors.green.primary, borderRadius: BorderRadius.xl, padding: 18,
   },
-  profileHeaderSeller: { backgroundColor: colors.action },
-  name: { fontFamily: FontFamily.sans, fontSize: FontSize.md, fontWeight: FontWeight.bold, color: colors.onBrand },
-  tgHandle: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  profileHeaderSeller: { backgroundColor: Colors.terracotta.primary },
+  name: { fontFamily: FontFamily.displaySemibold, fontSize: FontSize.md, color: '#ffffff' },
+  tgHandle: { fontFamily: FontFamily.interRegular, fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
   sellerBadge: { marginTop: 6, backgroundColor: 'rgba(255,255,255,0.2)' },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  cardSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  cardTitle: { fontFamily: FontFamily.displaySemibold, fontSize: 16, color: Colors.ink },
+  cardSub: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, marginTop: 2 },
   sellerInfo: {
     marginTop: 12, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: colors.border, gap: 2,
+    borderTopWidth: 1, borderTopColor: Colors.line, gap: 2,
   },
   sellerInfoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  infoLabel: { fontSize: 13, color: colors.textMuted },
-  infoValue: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  infoLabel: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft },
+  infoValue: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
   sectionTitle: {
-    fontSize: 11, fontWeight: '700', color: colors.textMuted,
+    fontFamily: FontFamily.interBold, fontSize: 11, color: Colors.inkSoft,
     textTransform: 'uppercase', letterSpacing: 0.8,
   },
   sectionTitlePadded: { paddingHorizontal: Spacing[4], paddingTop: Spacing[4], paddingBottom: Spacing[1] },
   menuRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing[3],
     paddingVertical: 13, paddingHorizontal: Spacing[4],
-    borderTopWidth: 1, borderTopColor: colors.border,
+    borderTopWidth: 1, borderTopColor: Colors.line,
   },
-  menuLabel: { flex: 1, fontSize: 14, color: colors.textPrimary },
-  langRow: { paddingHorizontal: Spacing[4], paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.border },
+  menuLabel: { flex: 1, fontFamily: FontFamily.interRegular, fontSize: 14, color: Colors.ink },
+  langRow: { paddingHorizontal: Spacing[4], paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.line },
   langSwitch: {
-    flexDirection: 'row', backgroundColor: colors.canvas,
-    borderRadius: 10, padding: 3, borderWidth: 1, borderColor: colors.border,
+    flexDirection: 'row', backgroundColor: Colors.cream.background,
+    borderRadius: 10, padding: 3, borderWidth: 1, borderColor: Colors.line,
   },
   langOption: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  langOptionActive: { backgroundColor: colors.brand },
-  langOptionText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
-  langOptionTextActive: { color: colors.onBrand },
-  version: { textAlign: 'center', fontSize: 11, color: colors.textMuted, marginTop: 4 },
+  langOptionActive: { backgroundColor: Colors.green.primary },
+  langOptionText: { fontFamily: FontFamily.interSemibold, fontSize: 12, color: Colors.inkSoft },
+  langOptionTextActive: { color: '#ffffff' },
+  version: { fontFamily: FontFamily.interRegular, textAlign: 'center', fontSize: 11, color: Colors.inkSoft, marginTop: 4 },
 });
