@@ -3,8 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MessageCircle } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import type { MessageThread } from '@arogenpm/sdk';
 import { Avatar, EmptyState, SkeletonRow } from '../../../src/components/ui';
@@ -59,7 +58,7 @@ export default function MessagesScreen() {
             >
               <Avatar name={(item as any).otherUser?.name} size={46} />
               <View style={styles.threadLeft}>
-                <Text style={styles.otherUserName} numberOfLines={1}>
+                <Text style={[styles.otherUserName, item.unreadCount > 0 && styles.otherUserNameUnread]} numberOfLines={1}>
                   {(item as any).otherUser?.name ?? 'User'}
                 </Text>
                 <Text style={styles.listingTitle} numberOfLines={1}>
@@ -69,11 +68,7 @@ export default function MessagesScreen() {
                   {item.lastMessage.body}
                 </Text>
               </View>
-              {item.unreadCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.unreadCount}</Text>
-                </View>
-              )}
+              {item.unreadCount > 0 && <View style={styles.unreadDot} />}
             </TouchableOpacity>
           )}
         />
@@ -83,21 +78,19 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
+  root: { flex: 1, backgroundColor: Colors.cream.background },
   header: {
-    backgroundColor: colors.brand,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
   },
   headerTitle: {
-    fontFamily: FontFamily.serif,
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: colors.onBrand,
+    fontFamily: FontFamily.display,
+    fontSize: FontSize.lg,
+    color: Colors.ink,
   },
   list: { padding: Spacing[3], gap: 8 },
   thread: {
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
     borderRadius: BorderRadius.lg,
     padding: 14,
     flexDirection: 'row',
@@ -105,37 +98,33 @@ const styles = StyleSheet.create({
     gap: Spacing[3],
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: Colors.line,
   },
   threadLeft: { flex: 1 },
   otherUserName: {
+    fontFamily: FontFamily.interSemibold,
     fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
+    color: Colors.ink,
+  },
+  otherUserNameUnread: {
+    fontFamily: FontFamily.interBold,
   },
   listingTitle: {
+    fontFamily: FontFamily.interMedium,
     fontSize: 12,
-    fontWeight: '500',
-    color: colors.brand,
+    color: Colors.green.primary,
     marginTop: 1,
     marginBottom: 2,
   },
   lastMsg: {
+    fontFamily: FontFamily.interRegular,
     fontSize: 12,
-    color: colors.textBody,
+    color: Colors.inkSoft,
   },
-  badge: {
-    backgroundColor: colors.action,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: colors.onAction,
-    fontSize: 11,
-    fontWeight: '700',
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.terracotta.primary,
   },
 });
