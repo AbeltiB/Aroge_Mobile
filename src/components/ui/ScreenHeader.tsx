@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, Layout } from '../../constants';
+import { Colors, FontFamily, FontSize, Spacing, Layout } from '../../constants';
 import { IconButton } from './IconButton';
 
 type HeaderTone = 'surface' | 'brand' | 'action';
@@ -109,12 +109,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.displaySemibold,
     fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
   },
   subtitle: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interRegular,
     fontSize: FontSize.xs,
     marginTop: 1,
   },

@@ -5,8 +5,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Lock, Info } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, BorderRadius } from '../../src/constants';
+import { Colors, FontFamily, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB, calculateFees } from '@arogenpm/sdk';
 import type { Listing, Bundle, PlatformFee, AppliedFee, BankAccount } from '@arogenpm/sdk';
@@ -48,10 +47,10 @@ function FeeRow({ label, amount, isBold, isDelivery }: {
 }) {
   return (
     <View style={styles.feeRow}>
-      <Text style={[styles.feeLabel, isBold && styles.feeLabelBold, isDelivery && { color: colors.brand }]}>
+      <Text style={[styles.feeLabel, isBold && styles.feeLabelBold, isDelivery && { color: Colors.green.primary }]}>
         {label}
       </Text>
-      <Text style={[styles.feeAmount, isBold && styles.feeAmountBold, isDelivery && { color: colors.brand }]}>
+      <Text style={[styles.feeAmount, isBold && styles.feeAmountBold, isDelivery && { color: Colors.green.primary }]}>
         {formatETB(amount)}
       </Text>
     </View>
@@ -100,7 +99,7 @@ export default function CheckoutScreen() {
   if (loading || !item) {
     return (
       <SafeAreaView style={styles.centered}>
-        <ActivityIndicator color={colors.brand} />
+        <ActivityIndicator color={Colors.green.primary} />
       </SafeAreaView>
     );
   }
@@ -143,8 +142,8 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="Checkout" tone="brand" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="Checkout" tone="surface" bordered />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Item */}
@@ -303,58 +302,58 @@ export default function CheckoutScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, backgroundColor: colors.canvas, justifyContent: 'center', alignItems: 'center' },
+  centered: { flex: 1, backgroundColor: Colors.cream.background, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: 16, gap: 16, paddingBottom: 40 },
   section: { gap: 8 },
-  sectionLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: colors.textMuted, textTransform: 'uppercase' },
+  sectionLabel: { fontFamily: FontFamily.interBold, fontSize: 10, letterSpacing: 1.4, color: Colors.inkSoft, textTransform: 'uppercase' },
   itemCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   itemThumb: { width: 48, height: 48 },
-  itemTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  itemSeller: { fontSize: 12, color: colors.brand, marginTop: 3 },
+  itemTitle: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink },
+  itemSeller: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.green.primary, marginTop: 3 },
   optionGroup: { overflow: 'hidden' },
   radioRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
-  radioRowSelected: { backgroundColor: colors.brandTint },
+  radioRowSelected: { backgroundColor: Colors.green.tint },
   radioDot: {
     width: 18, height: 18, borderRadius: 9,
-    borderWidth: 2, borderColor: colors.border,
+    borderWidth: 2, borderColor: Colors.line,
     alignItems: 'center', justifyContent: 'center',
   },
-  radioDotSelected: { borderColor: colors.brand },
-  radioDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand },
-  radioLabel: { fontSize: 14, fontWeight: '500', color: colors.textBody },
-  radioLabelSelected: { color: colors.textPrimary, fontWeight: '600' },
-  radioSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  divider: { height: 1, backgroundColor: colors.border, marginLeft: 44 },
+  radioDotSelected: { borderColor: Colors.green.primary },
+  radioDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.green.primary },
+  radioLabel: { fontFamily: FontFamily.interMedium, fontSize: 14, color: Colors.inkSoft },
+  radioLabelSelected: { color: Colors.ink, fontFamily: FontFamily.interSemibold },
+  radioSub: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 2 },
+  divider: { height: 1, backgroundColor: Colors.line, marginLeft: 44 },
   bankNote: {
-    backgroundColor: colors.brandTint, gap: 6,
+    backgroundColor: Colors.green.tint, gap: 6,
   },
   bankRow: { paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(31,122,90,0.12)', marginBottom: 4 },
-  bankName: { fontSize: 13, fontWeight: '700', color: colors.brand },
-  bankDetail: { fontSize: 12, color: colors.textBody },
-  bankNoteText: { fontSize: 11, color: colors.brand, lineHeight: 16 },
-  deliveryOffNote: { backgroundColor: colors.brandTint },
-  deliveryOffNoteText: { fontSize: 12, color: colors.brand },
+  bankName: { fontFamily: FontFamily.interBold, fontSize: 13, color: Colors.green.primary },
+  bankDetail: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft },
+  bankNoteText: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.green.primary, lineHeight: 16 },
+  deliveryOffNote: { backgroundColor: Colors.green.tint },
+  deliveryOffNoteText: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.green.primary },
   addressField: { marginTop: 10 },
-  approvalNote: { backgroundColor: colors.valueTint, gap: 4 },
+  approvalNote: { backgroundColor: Colors.gold.primary + '1E', gap: 4 },
   approvalHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  approvalNoteTitle: { fontSize: 12, fontWeight: '700', color: colors.valueText },
-  approvalNoteBody: { fontSize: 11, color: colors.valueText, lineHeight: 16 },
+  approvalNoteTitle: { fontFamily: FontFamily.interBold, fontSize: 12, color: Colors.gold.dark },
+  approvalNoteBody: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.gold.dark, lineHeight: 16 },
   summaryCard: { gap: 10 },
   feeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  feeLabel: { fontSize: 13, color: colors.textBody },
-  feeLabelBold: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  feeAmount: { fontSize: 13, color: colors.textBody },
-  feeAmountBold: { fontSize: 15, fontWeight: '800', color: colors.value },
-  summaryDivider: { height: 1, backgroundColor: colors.border },
+  feeLabel: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft },
+  feeLabelBold: { fontFamily: FontFamily.interBold, fontSize: 14, color: Colors.ink },
+  feeAmount: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft },
+  feeAmountBold: { fontFamily: FontFamily.display, fontSize: 15, color: Colors.ink },
+  summaryDivider: { height: 1, backgroundColor: Colors.line },
   escrowNote: {
-    backgroundColor: colors.brandTint, flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    backgroundColor: Colors.green.tint, flexDirection: 'row', gap: 8, alignItems: 'flex-start',
   },
-  escrowNoteText: { flex: 1, fontSize: 12, color: colors.brand, lineHeight: 17 },
+  escrowNoteText: { flex: 1, fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.green.primary, lineHeight: 17 },
   footer: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1, borderTopColor: colors.border,
+    backgroundColor: Colors.cream.surface,
+    borderTopWidth: 1, borderTopColor: Colors.line,
     padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14,
   },
   footerTotal: { flex: 1 },
-  footerTotalLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '500' },
+  footerTotalLabel: { fontFamily: FontFamily.interMedium, fontSize: 11, color: Colors.inkSoft },
 });
