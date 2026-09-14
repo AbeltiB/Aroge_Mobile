@@ -5,14 +5,13 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { CheckCircle2, Circle, Star, Truck, Clock, XCircle, Upload } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../src/constants';
+import { CheckCircle2, Star, Truck, Clock, XCircle, Upload } from 'lucide-react-native';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Order, EscrowEvent, BankAccount } from '@arogenpm/sdk';
 import { useAppState } from '../../src/context/AppContext';
-import { ScreenHeader, Card, Badge, Button, Input, PriceText, EmptyState, Chip, BottomSheet } from '../../src/components/ui';
+import { ScreenHeader, Card, Badge, Button, Input, PriceText, EmptyState, Chip, BottomSheet, EscrowHeader, EscrowTimeline, type EscrowState, type EscrowStep } from '../../src/components/ui';
 import { haptics } from '../../src/lib/haptics';
 
 const STATUS_STEPS = [
@@ -22,6 +21,23 @@ const STATUS_STEPS = [
   'DELIVERED',
   'COMPLETED',
 ];
+
+const STEP_LABELS: Record<string, string> = {
+  PENDING_PAYMENT: 'Order placed',
+  PAID_ESCROWED: 'Payment secured — held in escrow',
+  IN_TRANSIT: 'Seller shipped',
+  DELIVERED: 'Delivered',
+  COMPLETED: 'Confirmed & released',
+};
+
+const ESCROW_STATE_BY_STATUS: Record<string, EscrowState | undefined> = {
+  PAID_ESCROWED: 'held',
+  IN_TRANSIT: 'held',
+  DELIVERED: 'held',
+  COMPLETED: 'released',
+  REFUNDED: 'refunded',
+  DISPUTED: 'disputed',
+};
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -216,7 +232,7 @@ export default function OrderScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.brand} />
+        <ActivityIndicator color={Colors.green.primary} />
       </View>
     );
   }
@@ -231,12 +247,19 @@ export default function OrderScreen() {
 
   const currentStep = STATUS_STEPS.indexOf(order.orderStatus);
   const totalPaid = order.amount + ((order as any).deliveryFee ?? 0) + ((order as any).serviceFee ?? 0);
+  const escrowState = ESCROW_STATE_BY_STATUS[order.orderStatus];
+  const escrowSteps: EscrowStep[] = STATUS_STEPS.map((step, i) => ({
+    label: STEP_LABELS[step] ?? step,
+    status: i < currentStep ? 'done' : i === currentStep ? 'current' : 'upcoming',
+  }));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="Order" tone="brand" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="Order" tone="surface" bordered />
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {escrowState && <EscrowHeader state={escrowState} amountEtb={totalPaid} />}
+
         <Card style={styles.gapCard}>
           <Text style={styles.cardTitle}>{(order as any).listing?.title ?? 'Item'}</Text>
 
@@ -262,7 +285,7 @@ export default function OrderScreen() {
             ))}
             <View style={styles.priceDivider} />
             <View style={styles.priceRow}>
-              <Text style={[styles.priceRowLabel, { fontWeight: '700', color: colors.textPrimary }]}>Total paid</Text>
+              <Text style={styles.priceRowLabelBold}>Total paid</Text>
               <PriceText amount={totalPaid} size="sm" />
             </View>
           </View>
@@ -347,10 +370,10 @@ export default function OrderScreen() {
                   disabled={uploadingProof}
                 >
                   {uploadingProof
-                    ? <ActivityIndicator color={colors.brand} />
+                    ? <ActivityIndicator color={Colors.green.primary} />
                     : (
                       <View style={styles.uploadProofRow}>
-                        <Upload size={13} color={colors.brand} />
+                        <Upload size={13} color={Colors.green.primary} />
                         <Text style={styles.uploadProofBtnText}>Or upload a transfer screenshot instead</Text>
                       </View>
                     )
@@ -363,26 +386,7 @@ export default function OrderScreen() {
 
         <Card style={styles.gapCard}>
           <Text style={styles.sectionTitle}>Order Status</Text>
-          <View style={styles.timeline}>
-            {STATUS_STEPS.map((step, i) => {
-              const done = i < currentStep;
-              const current = i === currentStep;
-              const StepIcon = done || current ? CheckCircle2 : Circle;
-              return (
-                <View key={step} style={styles.timelineRow}>
-                  <StepIcon
-                    size={18}
-                    color={done || current ? Colors.green.primary : Colors.border.default}
-                    fill={done ? Colors.green.primary : 'transparent'}
-                    strokeWidth={1.75}
-                  />
-                  <Text style={[styles.stepText, (done || current) && styles.stepTextActive]}>
-                    {step.replace(/_/g, ' ')}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+          <EscrowTimeline steps={escrowSteps} />
         </Card>
 
         {order.orderStatus === 'PAID_ESCROWED' && (
@@ -484,37 +488,34 @@ export default function OrderScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.cream.background },
   scroll: { padding: 16, gap: 12 },
   gapCard: { gap: 4 },
-  cardTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: colors.textPrimary },
-  meta: { fontSize: 12, color: colors.textBody },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 },
-  timeline: { gap: 12 },
-  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepText: { fontSize: 13, color: colors.textMuted, textTransform: 'capitalize' },
-  stepTextActive: { color: colors.textPrimary, fontWeight: '500' },
+  cardTitle: { fontFamily: FontFamily.displaySemibold, fontSize: FontSize.md, color: Colors.ink },
+  meta: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft },
+  sectionTitle: { fontFamily: FontFamily.interBold, fontSize: 14, color: Colors.ink, marginBottom: 8 },
   actions: { gap: 10 },
   bankPendingNote: {
-    backgroundColor: colors.valueTint, borderRadius: BorderRadius.md, padding: 12,
+    backgroundColor: Colors.gold.primary + '1E', borderRadius: BorderRadius.md, padding: 12,
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
   },
-  bankPendingText: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.valueText },
+  bankPendingText: { flex: 1, fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.gold.dark },
   bankPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  verifyErrorText: { fontSize: 12, color: Colors.error },
+  verifyErrorText: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.error },
   uploadProofBtn: { paddingVertical: 10, alignItems: 'center', marginTop: 4 },
   uploadProofRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  uploadProofBtnText: { fontSize: 12, color: colors.brand, fontWeight: '600' },
-  eventRow: { paddingVertical: 4, borderTopWidth: 1, borderTopColor: colors.border },
-  eventType: { fontSize: 12, fontWeight: '600', color: colors.brand },
-  eventNote: { fontSize: 11, color: colors.textBody, marginTop: 2 },
+  uploadProofBtnText: { fontFamily: FontFamily.interSemibold, fontSize: 12, color: Colors.green.primary },
+  eventRow: { paddingVertical: 4, borderTopWidth: 1, borderTopColor: Colors.line },
+  eventType: { fontFamily: FontFamily.interSemibold, fontSize: 12, color: Colors.green.primary },
+  eventNote: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 2 },
   priceBreakdown: { gap: 6, marginBottom: 8 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  priceRowLabel: { fontSize: 12, color: colors.textBody },
-  priceRowValue: { fontSize: 12, color: colors.textBody },
-  priceDivider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
-  rejectedReason: { fontSize: 11, color: Colors.error, marginTop: 6 },
+  priceRowLabel: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft },
+  priceRowLabelBold: { fontFamily: FontFamily.interBold, fontSize: 12, color: Colors.ink },
+  priceRowValue: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft },
+  priceDivider: { height: 1, backgroundColor: Colors.line, marginVertical: 4 },
+  rejectedReason: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.error, marginTop: 6 },
   starsRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   modalActions: { flexDirection: 'row', gap: 10 },
-  modalSub: { fontSize: FontSize.sm, color: colors.textMuted },
+  modalSub: { fontFamily: FontFamily.interRegular, fontSize: FontSize.sm, color: Colors.text.muted },
 });
