@@ -5,8 +5,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MoreHorizontal, BadgeCheck, Star, Store } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, Spacing, BorderRadius } from '../../src/constants';
+import { Colors, FontFamily, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
@@ -129,8 +128,8 @@ export default function SellerProfileScreen() {
 
   if (loading || !profile) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={colors.brand} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.green.primary} />
       </SafeAreaView>
     );
   }
@@ -138,14 +137,14 @@ export default function SellerProfileScreen() {
   const isSelf = user?.sub === profile.id;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
       <ScreenHeader
         title="Seller"
-        tone="brand"
+        tone="surface"
         bordered
         rightActions={!isSelf ? (
           <IconButton tone="tint" size="md" onPress={showMoreMenu}>
-            <MoreHorizontal size={18} color={colors.brand} />
+            <MoreHorizontal size={18} color={Colors.green.primary} />
           </IconButton>
         ) : undefined}
       />
@@ -265,32 +264,32 @@ export default function SellerProfileScreen() {
 
 const styles = StyleSheet.create({
   profileCard: { alignItems: 'center', padding: 20, gap: 6 },
-  name: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 6 },
+  name: { fontFamily: FontFamily.display, fontSize: 18, color: Colors.ink, marginTop: 6 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
-  meta: { fontSize: 12, color: colors.textMuted, textAlign: 'center' },
+  meta: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, textAlign: 'center' },
   statsRow: { flexDirection: 'row', gap: 24, marginTop: 10 },
   statBox: { alignItems: 'center' },
-  statValue: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
-  statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+  statValue: { fontFamily: FontFamily.displaySemibold, fontSize: 16, color: Colors.ink },
+  statLabel: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 1 },
   followBtn: { marginTop: 10, paddingHorizontal: 24 },
   sectionTitle: {
-    fontSize: 13, fontWeight: '800', color: colors.textPrimary,
+    fontFamily: FontFamily.interBold, fontSize: 13, color: Colors.ink,
     textTransform: 'uppercase', letterSpacing: 0.8,
     paddingHorizontal: 12, marginTop: 16, marginBottom: 8,
   },
   listingsGrid: { paddingHorizontal: Spacing[3], gap: 10 },
   listingCard: {
-    flex: 1, backgroundColor: colors.surface, borderRadius: BorderRadius.lg,
-    overflow: 'hidden', borderWidth: 1, borderColor: colors.border,
+    flex: 1, backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg,
+    overflow: 'hidden', borderWidth: 1, borderColor: Colors.line,
   },
   listingPhoto: { height: 100, width: '100%' },
-  listingTitle: { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  listingPrice: { fontSize: 13, fontWeight: '800', color: colors.value, marginTop: 2 },
+  listingTitle: { fontFamily: FontFamily.interSemibold, fontSize: 12, color: Colors.ink },
+  listingPrice: { fontFamily: FontFamily.display, fontSize: 13, color: Colors.gold.primary, marginTop: 2 },
   reviewCard: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.md, padding: 12,
-    borderWidth: 1, borderColor: colors.border, gap: 4,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.md, padding: 12,
+    borderWidth: 1, borderColor: Colors.line, gap: 4,
   },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  reviewerName: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  reviewComment: { fontSize: 12, color: colors.textBody, lineHeight: 17 },
+  reviewerName: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
+  reviewComment: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, lineHeight: 17 },
 });
