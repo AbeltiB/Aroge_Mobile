@@ -5,13 +5,12 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, MoreHorizontal, Heart, MapPin, ChevronRight, PackageSearch } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../src/constants';
+import { ChevronLeft, MoreHorizontal, Heart, MapPin, ChevronRight, PackageSearch, MessageCircle } from 'lucide-react-native';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
-import { RemoteImage, IconButton, Badge, Avatar, EmptyState, BottomSheet, Input, Button } from '../../src/components/ui';
+import { RemoteImage, IconButton, Badge, Avatar, EmptyState, BottomSheet, Input, Button, PriceText } from '../../src/components/ui';
 import { haptics } from '../../src/lib/haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -102,7 +101,7 @@ export default function ListingDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.brand} />
+        <ActivityIndicator color={Colors.green.primary} />
       </View>
     );
   }
@@ -156,7 +155,7 @@ export default function ListingDetailScreen() {
 
         <View style={styles.content}>
           <Text style={styles.title}>{listing.title}</Text>
-          <Text style={styles.price}>{formatETB(listing.price)}</Text>
+          <PriceText amount={listing.price} size="lg" />
 
           <View style={styles.tags}>
             <Badge label={CONDITION_LABELS[listing.condition] ?? listing.condition} tone="brand" />
@@ -187,12 +186,24 @@ export default function ListingDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {listing.seller && (
+          <IconButton
+            tone="tint"
+            size="lg"
+            onPress={() => router.push({
+              pathname: '/messages/[listingId]/[otherUserId]',
+              params: { listingId: listing.id, otherUserId: listing.seller.id, name: listing.seller.name, listingTitle: listing.title },
+            })}
+          >
+            <MessageCircle size={20} color={Colors.green.primary} />
+          </IconButton>
+        )}
         <View style={{ flex: 1 }}>
-          <Button label="Buy Now" variant="primary" onPress={handleBuyNow} />
+          <Button label="Buy — held in escrow" variant="primary" onPress={handleBuyNow} />
         </View>
         {listing.negotiable && (
-          <View style={{ flex: 1 }}>
-            <Button label="Make Offer" variant="secondary" onPress={() => setOfferModalVisible(true)} />
+          <View style={{ flex: 0.8 }}>
+            <Button label="Offer" variant="secondary" onPress={() => setOfferModalVisible(true)} />
           </View>
         )}
       </View>
@@ -243,8 +254,8 @@ export default function ListingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas },
+  root: { flex: 1, backgroundColor: Colors.cream.background },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.cream.background },
   photoContainer: { height: 340, backgroundColor: Colors.green.tint },
   photo: { width: SCREEN_WIDTH, height: 340 },
   dots: {
@@ -256,22 +267,21 @@ const styles = StyleSheet.create({
   floatingBack: { position: 'absolute', top: 12, left: 12 },
   floatingRightRow: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', gap: 8 },
   content: { padding: 20, gap: Spacing[2] },
-  title: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: colors.textPrimary },
-  price: { fontFamily: FontFamily.serif, fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: colors.value },
+  title: { fontFamily: FontFamily.display, fontSize: FontSize.lg, color: Colors.ink },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  sectionTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: colors.textPrimary, marginTop: Spacing[2] },
-  description: { fontSize: FontSize.sm, color: colors.textBody, lineHeight: FontSize.sm * 1.5 },
+  sectionTitle: { fontFamily: FontFamily.interBold, fontSize: FontSize.sm, color: Colors.ink, marginTop: Spacing[2] },
+  description: { fontFamily: FontFamily.interRegular, fontSize: FontSize.sm, color: Colors.inkSoft, lineHeight: FontSize.sm * 1.5 },
   sellerRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing[3],
     marginTop: Spacing[2], padding: Spacing[3],
-    backgroundColor: colors.surface, borderRadius: BorderRadius.lg,
-    borderWidth: 1, borderColor: colors.border,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: Colors.line,
   },
-  sellerName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: colors.textPrimary },
-  verified: { fontSize: FontSize.xs, color: colors.brand, marginTop: 1 },
+  sellerName: { fontFamily: FontFamily.interSemibold, fontSize: FontSize.base, color: Colors.ink },
+  verified: { fontFamily: FontFamily.interRegular, fontSize: FontSize.xs, color: Colors.green.primary, marginTop: 1 },
   footer: {
-    flexDirection: 'row', gap: Spacing[3], padding: Spacing[4],
-    backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
+    flexDirection: 'row', gap: Spacing[3], padding: Spacing[4], alignItems: 'center',
+    backgroundColor: Colors.cream.surface, borderTopWidth: 1, borderTopColor: Colors.line,
   },
-  modalSub: { fontSize: FontSize.sm, color: colors.textMuted },
+  modalSub: { fontFamily: FontFamily.interRegular, fontSize: FontSize.sm, color: Colors.text.muted },
 });
