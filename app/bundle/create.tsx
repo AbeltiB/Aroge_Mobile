@@ -5,8 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Check, Gift } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, Spacing, BorderRadius } from '../../src/constants';
+import { Colors, FontFamily, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
@@ -67,11 +66,11 @@ export default function CreateBundleScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="New Bundle" tone="brand" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="New Bundle" tone="surface" bordered />
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.brand} />
+        <ActivityIndicator style={{ marginTop: 40 }} color={Colors.green.primary} />
       ) : (
         <FlatList
           data={listings}
@@ -96,7 +95,7 @@ export default function CreateBundleScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-                  {isSelected && <Check size={14} color={colors.onBrand} strokeWidth={3} />}
+                  {isSelected && <Check size={14} color={Colors.text.onGreen} strokeWidth={3} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
@@ -127,26 +126,26 @@ export default function CreateBundleScreen() {
 
 const styles = StyleSheet.create({
   list: { padding: Spacing[3], gap: 8, paddingBottom: 200 },
-  hint: { fontSize: 12, color: colors.textMuted, marginBottom: 4, paddingHorizontal: 2 },
+  hint: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, marginBottom: 4, paddingHorizontal: 2 },
   row: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 14,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg, padding: 14,
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: colors.border,
+    borderWidth: 1, borderColor: Colors.line,
     marginBottom: 8,
   },
-  rowSelected: { borderColor: colors.brand, backgroundColor: colors.brandTint },
+  rowSelected: { borderColor: Colors.green.primary, backgroundColor: Colors.green.tint },
   checkbox: {
     width: 22, height: 22, borderRadius: 6,
-    borderWidth: 2, borderColor: colors.border,
+    borderWidth: 2, borderColor: Colors.line,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkboxChecked: { borderColor: colors.brand, backgroundColor: colors.brand },
-  title: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  price: { fontSize: 13, fontWeight: '700', color: colors.value, marginTop: 2 },
+  checkboxChecked: { borderColor: Colors.green.primary, backgroundColor: Colors.green.primary },
+  title: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink },
+  price: { fontFamily: FontFamily.display, fontSize: 13, color: Colors.gold.primary, marginTop: 2 },
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
+    backgroundColor: Colors.cream.surface, borderTopWidth: 1, borderTopColor: Colors.line,
     padding: 16, gap: 10,
   },
-  footerHint: { fontSize: 12, color: colors.textMuted, textAlign: 'center' },
+  footerHint: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, textAlign: 'center' },
 });

@@ -3,8 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'rea
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Gift } from 'lucide-react-native';
-import { colors } from '../../src/lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../src/constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Bundle } from '@arogenpm/sdk';
@@ -61,8 +60,8 @@ export default function BundleDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="Bundle" tone="brand" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="Bundle" tone="surface" bordered />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.priceCard}>
@@ -125,31 +124,31 @@ export default function BundleDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.canvas },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.cream.background },
   scroll: { padding: 16, gap: 14, paddingBottom: 40 },
   priceCard: {
-    backgroundColor: colors.brand, borderRadius: BorderRadius.xl, padding: 20, alignItems: 'center',
+    backgroundColor: Colors.green.primary, borderRadius: BorderRadius.xl, padding: 20, alignItems: 'center',
   },
-  priceLabel: { fontSize: 11, fontWeight: '700', color: 'rgba(243,239,231,0.6)', letterSpacing: 1.2, textTransform: 'uppercase' },
-  priceValue: { fontFamily: FontFamily.serif, fontSize: FontSize['2xl'], fontWeight: FontWeight.bold, color: colors.value, marginVertical: 4 },
-  savings: { fontSize: 12, color: 'rgba(243,239,231,0.75)' },
+  priceLabel: { fontFamily: FontFamily.interBold, fontSize: 11, color: 'rgba(243,239,231,0.6)', letterSpacing: 1.2, textTransform: 'uppercase' },
+  priceValue: { fontFamily: FontFamily.display, fontSize: FontSize['2xl'], color: Colors.gold.primary, marginVertical: 4 },
+  savings: { fontFamily: FontFamily.interRegular, fontSize: 12, color: 'rgba(243,239,231,0.75)' },
   sellerRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 12, backgroundColor: colors.surface, borderRadius: BorderRadius.lg,
-    borderWidth: 1, borderColor: colors.border,
+    padding: 12, backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: Colors.line,
   },
-  sellerName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  verified: { fontSize: 11, color: colors.brand, marginTop: 1 },
-  sectionTitle: { fontSize: 13, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.8 },
+  sellerName: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink },
+  verified: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.green.primary, marginTop: 1 },
+  sectionTitle: { fontFamily: FontFamily.interBold, fontSize: 13, color: Colors.ink, textTransform: 'uppercase', letterSpacing: 0.8 },
   itemsCard: { overflow: 'hidden' },
   itemRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: Spacing[3] },
-  itemRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
+  itemRowBorder: { borderTopWidth: 1, borderTopColor: Colors.line },
   itemThumb: { width: 36, height: 36 },
-  itemTitle: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  itemMeta: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  itemPrice: { fontSize: 13, fontWeight: '700', color: colors.value },
+  itemTitle: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
+  itemMeta: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 1 },
+  itemPrice: { fontFamily: FontFamily.display, fontSize: 13, color: Colors.gold.primary },
   footer: {
-    padding: 16, backgroundColor: colors.surface,
-    borderTopWidth: 1, borderTopColor: colors.border,
+    padding: 16, backgroundColor: Colors.cream.surface,
+    borderTopWidth: 1, borderTopColor: Colors.line,
   },
 });
