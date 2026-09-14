@@ -42,8 +42,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   price: {
-    fontFamily: FontFamily.serif,
-    fontWeight: FontWeight.bold,
+    fontFamily: FontFamily.display,
   },
   original: {
     fontFamily: FontFamily.sans,

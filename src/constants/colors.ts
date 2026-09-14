@@ -74,6 +74,16 @@ export const Colors = {
   // ─── Third-party Brand ──────────────────────────────────────────────────────
   telegram: '#2AABEE',
   telegramDark: '#1e96d6',
+
+  // ─── Redesign neutrals (aroge-app-design.html token set) ────────────────────
+  /** Warm near-black ink — display headings, high-emphasis text */
+  ink: '#211d16',
+  /** Softer ink — secondary/meta text on the redesigned screens */
+  inkSoft: '#5c564a',
+  /** Hairline borders/dividers on the redesigned screens */
+  line: '#dcd3bf',
+  /** Destructive actions (log out, delete listing) */
+  danger: '#a83a3a',
 } as const;
 
 export type ColorKeys = typeof Colors;

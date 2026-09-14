@@ -31,6 +31,23 @@ export const FontFamily = {
     android: 'monospace',
     default: 'Courier New',
   }) as string,
+
+  // ─── Redesign type system (loaded via expo-font, see app/_layout.tsx) ──────
+  // Google Fonts no longer publishes "Archivo Expanded" as its own family
+  // (superseded by Archivo's variable width axis) — plain Archivo at the same
+  // 700/800 weights is the closest available match to the design spec.
+  /** Display/headline weight — screen titles, splash wordmark, prices */
+  display: 'Archivo_800ExtraBold',
+  /** Secondary display weight — section headers, card titles */
+  displaySemibold: 'Archivo_700Bold',
+  /** Body copy, default weight */
+  interRegular: 'Inter_400Regular',
+  interMedium: 'Inter_500Medium',
+  interSemibold: 'Inter_600SemiBold',
+  interBold: 'Inter_700Bold',
+  /** Amharic (i18n locale 'am') headings — Inter/Archivo don't cover Ethiopic script */
+  amharic: 'NotoSansEthiopic_700Bold',
+  amharicMedium: 'NotoSansEthiopic_500Medium',
 } as const;
 
 export const FontSize = {

@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, Image, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import { Archivo_700Bold, Archivo_800ExtraBold } from '@expo-google-fonts/archivo';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { NotoSansEthiopic_500Medium, NotoSansEthiopic_700Bold } from '@expo-google-fonts/noto-sans-ethiopic';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useAppState } from '../src/context/AppContext';
@@ -9,6 +14,8 @@ import { api } from '../src/lib/api';
 import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../src/constants';
 import { Button } from '../src/components/ui';
 import type { Notification } from '@arogenpm/sdk';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function PopupOverlay() {
   const { isAuthenticated, refreshUnread } = useAppState();
@@ -65,6 +72,23 @@ function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontsError] = useFonts({
+    Archivo_700Bold,
+    Archivo_800ExtraBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    NotoSansEthiopic_500Medium,
+    NotoSansEthiopic_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontsError) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded, fontsError]);
+
+  if (!fontsLoaded && !fontsError) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

@@ -57,7 +57,8 @@
           "icon": "./assets/adaptive-icon.png",
           "color": "#1f7a5a"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
