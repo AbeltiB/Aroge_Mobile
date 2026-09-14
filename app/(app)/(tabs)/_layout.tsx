@@ -3,40 +3,42 @@
 import { Tabs } from 'expo-router';
 import { View, Text } from 'react-native';
 import { Home, Search, MessageCircle, User, Store } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
+import { Colors, FontFamily } from '../../../src/constants';
 import { useAppState } from '../../../src/context/AppContext';
 
 function SellerPill({ label, active }: { label: string; active: boolean }) {
   return (
     <View
       style={{
-        backgroundColor: active ? colors.action : 'rgba(184,92,42,0.25)',
+        backgroundColor: active ? Colors.terracotta.primary : Colors.terracotta.tint,
         borderRadius: 10,
         paddingHorizontal: 10,
         paddingVertical: 3,
         marginTop: 2,
       }}
     >
-      <Text style={{ color: colors.onAction, fontSize: 10, fontWeight: '800' }}>{label}</Text>
+      <Text style={{ fontFamily: FontFamily.interBold, color: active ? '#ffffff' : Colors.terracotta.primary, fontSize: 10 }}>{label}</Text>
     </View>
   );
 }
 
 export default function TabsLayout() {
   const { sellerMode } = useAppState();
+  const activeTint = sellerMode ? Colors.terracotta.primary : Colors.green.primary;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: sellerMode ? colors.action : colors.brand,
+          backgroundColor: Colors.cream.surface,
+          borderTopWidth: 1,
+          borderTopColor: Colors.line,
           height: 64,
-          borderTopWidth: 0,
         },
-        tabBarActiveTintColor: sellerMode ? colors.onAction : colors.value,
-        tabBarInactiveTintColor: sellerMode ? 'rgba(255,255,255,0.55)' : colors.onBrand,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarActiveTintColor: activeTint,
+        tabBarInactiveTintColor: Colors.inkSoft,
+        tabBarLabelStyle: { fontFamily: FontFamily.interSemibold, fontSize: 11 },
       }}
     >
       <Tabs.Screen
@@ -70,7 +72,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name='profile'
         options={{
-          title: sellerMode ? '🏪 Shop' : 'Profile',
+          title: sellerMode ? 'Shop' : 'Profile',
           tabBarIcon: ({ color, focused }) =>
             sellerMode
               ? <Store color={color} size={22} strokeWidth={focused ? 2.4 : 2} />
