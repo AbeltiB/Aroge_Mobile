@@ -3,13 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, RefreshControl } fr
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Plus, Store, TrendingUp, ShieldCheck, Wallet } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
-import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius } from '../../../src/constants';
+import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
 import { useAppState } from '../../../src/context/AppContext';
-import { RemoteImage, Badge, Button, Chip, EmptyState, SkeletonRow } from '../../../src/components/ui';
+import { RemoteImage, Badge, Button, Chip, EmptyState, SkeletonRow, IconButton } from '../../../src/components/ui';
 
 const TIPS = [
   { Icon: Camera, text: 'Clear photos sell 3× faster' },
@@ -17,6 +16,10 @@ const TIPS = [
   { Icon: ShieldCheck, text: 'Funds are held in escrow until delivery is confirmed' },
   { Icon: Wallet, text: 'Get paid via Telebirr & CBE Birr bank transfer' },
 ] as const;
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Live', DRAFT: 'Draft', RESERVED: 'Reserved', SOLD: 'Sold', ARCHIVED: 'Archived',
+};
 
 const STATUS_FILTERS = [
   { key: 'ACTIVE', label: 'Active' },
@@ -53,7 +56,7 @@ function PromoHub() {
           <Text style={styles.tipTitle}>Selling Tips</Text>
           {TIPS.map(({ Icon, text }) => (
             <View key={text} style={styles.tipRow}>
-              <Icon size={15} color={colors.brand} strokeWidth={2} />
+              <Icon size={15} color={Colors.green.primary} strokeWidth={2} />
               <Text style={styles.tip}>{text}</Text>
             </View>
           ))}
@@ -89,13 +92,12 @@ function MyListingsHub() {
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>My Listings</Text>
+          <Text style={styles.headerTitle}>My Shop</Text>
           <Text style={styles.headerSub}>Manage everything you're selling</Text>
         </View>
-        <TouchableOpacity style={styles.newBtn} onPress={() => router.push('/listing/create')} activeOpacity={0.85}>
-          <Plus size={16} color={colors.onAction} strokeWidth={2.5} />
-          <Text style={styles.newBtnText}>New</Text>
-        </TouchableOpacity>
+        <IconButton tone="plain" size="lg" onPress={() => router.push('/listing/create')} style={styles.newBtn}>
+          <Plus size={20} color="#ffffff" strokeWidth={2.5} />
+        </IconButton>
       </View>
 
       <FlatList
@@ -118,7 +120,7 @@ function MyListingsHub() {
           data={listings}
           keyExtractor={(l) => l.id}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.action} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.terracotta.primary} />}
           ListEmptyComponent={
             <EmptyState
               icon={<Store size={28} color={Colors.text.muted} strokeWidth={1.5} />}
@@ -143,7 +145,7 @@ function MyListingsHub() {
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
                   <Text style={styles.rowPrice}>{formatETB(item.price)}</Text>
-                  <Badge label={item.status} tone={STATUS_TONE[item.status] ?? 'neutral'} />
+                  <Badge label={STATUS_LABELS[item.status] ?? item.status} tone={STATUS_TONE[item.status] ?? 'neutral'} />
                 </View>
               </TouchableOpacity>
             );
@@ -160,46 +162,40 @@ export default function SellScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
+  root: { flex: 1, backgroundColor: Colors.cream.background },
   header: {
-    backgroundColor: colors.action,
-    paddingHorizontal: 20, paddingVertical: 18,
+    paddingHorizontal: 20, paddingVertical: 14,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  headerTitle: { fontFamily: FontFamily.serif, fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: colors.onAction },
-  headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
-  newBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: BorderRadius.md,
-    paddingHorizontal: 12, paddingVertical: 8,
-  },
-  newBtnText: { color: colors.onAction, fontWeight: '700', fontSize: 13 },
+  headerTitle: { fontFamily: FontFamily.display, fontSize: FontSize.lg, color: Colors.ink },
+  headerSub: { fontFamily: FontFamily.interRegular, fontSize: 12.5, color: Colors.inkSoft, marginTop: 3 },
+  newBtn: { backgroundColor: Colors.terracotta.primary },
   body: { flex: 1, padding: Spacing[4], gap: Spacing[4] },
   promoCard: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.xl, padding: Spacing[6], gap: Spacing[3],
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.xl, padding: Spacing[6], gap: Spacing[3],
   },
   promoIcon: {
     width: 56, height: 56, borderRadius: BorderRadius.lg,
-    backgroundColor: colors.action, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.terracotta.primary, alignItems: 'center', justifyContent: 'center',
     marginBottom: Spacing[1],
   },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  cardBody: { fontSize: 13, color: colors.textBody, lineHeight: 18, marginBottom: Spacing[2] },
+  cardTitle: { fontFamily: FontFamily.displaySemibold, fontSize: 18, color: Colors.ink },
+  cardBody: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft, lineHeight: 18, marginBottom: Spacing[2] },
   tipCard: {
-    backgroundColor: colors.brandTint, borderRadius: BorderRadius.xl, padding: Spacing[4], gap: Spacing[3],
+    backgroundColor: Colors.green.tint, borderRadius: BorderRadius.xl, padding: Spacing[4], gap: Spacing[3],
   },
-  tipTitle: { fontSize: 14, fontWeight: '700', color: colors.brandDeep, marginBottom: 2 },
+  tipTitle: { fontFamily: FontFamily.interBold, fontSize: 14, color: Colors.green.dark, marginBottom: 2 },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[2] },
-  tip: { flex: 1, fontSize: 13, color: colors.textBody, lineHeight: 18 },
+  tip: { flex: 1, fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft, lineHeight: 18 },
   filterRow: { paddingHorizontal: Spacing[3], paddingVertical: Spacing[2], gap: 8 },
   list: { padding: Spacing[3], gap: 8 },
   row: {
-    backgroundColor: colors.surface, borderRadius: BorderRadius.lg, padding: 12,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.lg, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: colors.border, marginBottom: 8,
+    borderWidth: 1, borderColor: Colors.line, marginBottom: 8,
   },
   thumb: { width: 52, height: 52 },
-  rowTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  rowMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  rowPrice: { fontSize: 13, fontWeight: '700', color: colors.value },
+  rowTitle: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink },
+  rowMeta: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 2 },
+  rowPrice: { fontFamily: FontFamily.display, fontSize: 13, color: Colors.ink },
 });

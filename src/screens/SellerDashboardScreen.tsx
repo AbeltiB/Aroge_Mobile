@@ -6,8 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Bell, Palmtree, Package, Gift } from 'lucide-react-native';
-import { colors } from '../lib/colors';
-import { Colors } from '../constants';
+import { Colors, FontFamily } from '../constants';
 import { api } from '../lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing, Order, Bundle } from '@arogenpm/sdk';
@@ -30,7 +29,7 @@ interface SellerStats {
   bundles: Bundle[]
 }
 
-function StatBox({ label, value, sub, accent = colors.brand, onPress }: { label: string; value: string | number; sub?: string; accent?: string; onPress?: () => void }) {
+function StatBox({ label, value, sub, accent = Colors.green.primary, onPress }: { label: string; value: string | number; sub?: string; accent?: string; onPress?: () => void }) {
   const content = (
     <View style={[statStyles.box, { borderTopColor: accent }]}>
       <Text style={statStyles.value}>{value}</Text>
@@ -44,12 +43,12 @@ function StatBox({ label, value, sub, accent = colors.brand, onPress }: { label:
 
 const statStyles = StyleSheet.create({
   box: {
-    flex: 1, backgroundColor: colors.surface, borderRadius: 12,
+    flex: 1, backgroundColor: Colors.cream.surface, borderRadius: 12,
     padding: 12, borderTopWidth: 3, minWidth: 80,
   },
-  value: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
-  label: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontWeight: '600' },
-  sub: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
+  value: { fontFamily: FontFamily.display, fontSize: 22, color: Colors.ink },
+  label: { fontFamily: FontFamily.interSemibold, fontSize: 11, color: Colors.inkSoft, marginTop: 2 },
+  sub: { fontFamily: FontFamily.interRegular, fontSize: 10, color: Colors.inkSoft, marginTop: 2 },
 });
 
 export default function SellerDashboardScreen() {
@@ -127,8 +126,8 @@ export default function SellerDashboardScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={colors.action} size="large" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.terracotta.primary} size="large" />
       </SafeAreaView>
     );
   }
@@ -136,7 +135,7 @@ export default function SellerDashboardScreen() {
   const s = stats!;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }}>
       {/* Seller header */}
       <View style={styles.header}>
         <View>
@@ -146,7 +145,7 @@ export default function SellerDashboardScreen() {
         </View>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <TouchableOpacity onPress={() => router.push('/notifications' as any)} style={styles.iconBtn}>
-            <Bell size={20} color={colors.onAction} strokeWidth={2} />
+            <Bell size={20} color={'#ffffff'} strokeWidth={2} />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
@@ -165,13 +164,13 @@ export default function SellerDashboardScreen() {
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.terracotta.primary} />}
       >
         {/* Holiday Mode card */}
         <View style={[styles.holidayCard, holidayMode && styles.holidayCardActive]}>
           <View style={styles.holidayTop}>
             <View style={styles.holidayLeft}>
-              <Palmtree size={22} color={holidayMode ? Colors.gold.dark : colors.brand} strokeWidth={1.75} />
+              <Palmtree size={22} color={holidayMode ? Colors.gold.dark : Colors.green.primary} strokeWidth={1.75} />
               <View>
                 <Text style={[styles.holidayTitle, holidayMode && styles.holidayTitleActive]}>
                   Holiday Mode
@@ -207,9 +206,9 @@ export default function SellerDashboardScreen() {
         <View>
           <Text style={styles.sectionTitle}>Listings</Text>
           <View style={styles.statsRow}>
-            <StatBox label="Active" value={s.listings.active} accent={colors.brand} />
-            <StatBox label="Reserved" value={s.listings.reserved} accent={colors.value} />
-            <StatBox label="Sold" value={s.listings.sold} accent={colors.brand} />
+            <StatBox label="Active" value={s.listings.active} accent={Colors.green.primary} />
+            <StatBox label="Reserved" value={s.listings.reserved} accent={Colors.gold.primary} />
+            <StatBox label="Sold" value={s.listings.sold} accent={Colors.green.primary} />
           </View>
         </View>
 
@@ -217,12 +216,12 @@ export default function SellerDashboardScreen() {
         <View>
           <Text style={styles.sectionTitle}>Orders</Text>
           <View style={styles.statsRow}>
-            <StatBox label="In Escrow" value={s.orders.inEscrow} accent={colors.value} sub="Awaiting delivery" />
-            <StatBox label="Pending" value={s.orders.pending} accent={s.orders.pending > 0 ? colors.action : colors.brand} />
+            <StatBox label="In Escrow" value={s.orders.inEscrow} accent={Colors.gold.primary} sub="Awaiting delivery" />
+            <StatBox label="Pending" value={s.orders.pending} accent={s.orders.pending > 0 ? Colors.terracotta.primary : Colors.green.primary} />
             <StatBox
               label="Offers"
               value={s.pendingOffers}
-              accent={s.pendingOffers > 0 ? colors.action : colors.brand}
+              accent={s.pendingOffers > 0 ? Colors.terracotta.primary : Colors.green.primary}
               onPress={() => router.push('/offers' as any)}
             />
           </View>
@@ -351,58 +350,58 @@ function formatStatus(status: string): string {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: colors.action,
+    backgroundColor: Colors.terracotta.primary,
     paddingHorizontal: 16, paddingVertical: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  headerLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.55)', letterSpacing: 1.5 },
-  headerName: { fontSize: 20, fontWeight: '800', color: colors.onAction, marginTop: 2 },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  headerLabel: { fontFamily: FontFamily.interBold, fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 1.5 },
+  headerName: { fontFamily: FontFamily.display, fontSize: 20, color: '#ffffff', marginTop: 2 },
+  headerSub: { fontFamily: FontFamily.interRegular, fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
   newListingBtn: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
   },
-  newListingText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
+  newListingText: { fontFamily: FontFamily.interBold, color: '#ffffff', fontSize: 14 },
   scroll: { padding: 14, gap: 16, paddingBottom: 40 },
   earningsCard: {
-    backgroundColor: colors.brand,
+    backgroundColor: Colors.green.primary,
     borderRadius: 16, padding: 20, alignItems: 'center',
   },
-  earningsLabel: { fontSize: 11, fontWeight: '700', color: 'rgba(243,239,231,0.6)', letterSpacing: 1.2, textTransform: 'uppercase' },
-  earningsValue: { fontSize: 32, fontWeight: '900', color: colors.value, marginVertical: 4 },
-  earningsSub: { fontSize: 12, color: 'rgba(243,239,231,0.65)' },
+  earningsLabel: { fontFamily: FontFamily.interBold, fontSize: 11, color: 'rgba(243,239,231,0.6)', letterSpacing: 1.2, textTransform: 'uppercase' },
+  earningsValue: { fontFamily: FontFamily.display, fontSize: 32, color: Colors.gold.primary, marginVertical: 4 },
+  earningsSub: { fontFamily: FontFamily.interRegular, fontSize: 12, color: 'rgba(243,239,231,0.65)' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  sectionTitle: { fontSize: 13, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
-  seeAll: { fontSize: 13, color: colors.brand, fontWeight: '600' },
-  noBundlesText: { fontSize: 12, color: colors.textMuted, lineHeight: 17 },
+  sectionTitle: { fontFamily: FontFamily.interBold, fontSize: 13, color: Colors.ink, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+  seeAll: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.green.primary },
+  noBundlesText: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, lineHeight: 17 },
   statsRow: { flexDirection: 'row', gap: 8 },
-  listCard: { backgroundColor: colors.surface, borderRadius: 14, overflow: 'hidden' },
+  listCard: { backgroundColor: Colors.cream.surface, borderRadius: 14, overflow: 'hidden' },
   orderRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
-  orderRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-  orderTitle: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  orderBuyer: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  orderAmount: { fontSize: 14, fontWeight: '800', color: colors.value },
+  orderRowBorder: { borderTopWidth: 1, borderTopColor: Colors.line },
+  orderTitle: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
+  orderBuyer: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 2 },
+  orderAmount: { fontFamily: FontFamily.display, fontSize: 14, color: Colors.gold.primary },
   listingRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
   listingIcon: {
     width: 36, height: 36, borderRadius: 8,
-    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.green.tint, alignItems: 'center', justifyContent: 'center',
   },
-  listingTitle: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  listingCond: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  listingPrice: { fontSize: 13, fontWeight: '700', color: colors.value },
+  listingTitle: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
+  listingCond: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 1 },
+  listingPrice: { fontFamily: FontFamily.display, fontSize: 13, color: Colors.gold.primary },
   emptyState: { alignItems: 'center', gap: 8, paddingVertical: 32 },
   emptyIconWrap: {
     width: 64, height: 64, borderRadius: 32,
-    backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.green.tint, alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  emptyDesc: { fontSize: 13, color: colors.textMuted, textAlign: 'center', paddingHorizontal: 20 },
+  emptyTitle: { fontFamily: FontFamily.displaySemibold, fontSize: 18, color: Colors.ink },
+  emptyDesc: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft, textAlign: 'center', paddingHorizontal: 20 },
   createBtn: {
-    marginTop: 8, backgroundColor: colors.action,
+    marginTop: 8, backgroundColor: Colors.terracotta.primary,
     paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12,
   },
-  createBtnText: { color: colors.onAction, fontWeight: '700', fontSize: 14 },
+  createBtnText: { fontFamily: FontFamily.interBold, color: '#ffffff', fontSize: 14 },
   iconBtn: { padding: 6, position: 'relative' },
   badge: {
     position: 'absolute', top: 0, right: 0,
@@ -410,10 +409,10 @@ const styles = StyleSheet.create({
     minWidth: 18, height: 18, paddingHorizontal: 3,
     alignItems: 'center', justifyContent: 'center',
   },
-  badgeText: { fontSize: 10, fontWeight: '700', color: '#B85C2A' },
+  badgeText: { fontFamily: FontFamily.interBold, fontSize: 10, color: '#B85C2A' },
   holidayCard: {
-    backgroundColor: colors.surface, borderRadius: 14,
-    padding: 14, borderWidth: 1.5, borderColor: colors.border,
+    backgroundColor: Colors.cream.surface, borderRadius: 14,
+    padding: 14, borderWidth: 1.5, borderColor: Colors.line,
   },
   holidayCardActive: {
     backgroundColor: '#faeeda', borderColor: '#c89b3c',
@@ -421,12 +420,12 @@ const styles = StyleSheet.create({
   holidayTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   holidayLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   holidayIcon: { fontSize: 22 },
-  holidayTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  holidayTitle: { fontFamily: FontFamily.interSemibold, fontSize: 15, color: Colors.ink },
   holidayTitleActive: { color: '#3d2a10' },
-  holidaySub: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  holidaySub: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, marginTop: 1 },
   holidayCount: {
-    marginTop: 8, fontSize: 11, color: '#3d2a10',
-    fontWeight: '600', paddingTop: 8,
+    marginTop: 8, fontFamily: FontFamily.interSemibold, fontSize: 11, color: '#3d2a10',
+    paddingTop: 8,
     borderTopWidth: 1, borderTopColor: 'rgba(200,155,60,0.25)',
   },
 });
