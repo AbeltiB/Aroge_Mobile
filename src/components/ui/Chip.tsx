@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { Colors, FontFamily, FontSize, FontWeight, BorderRadius, Spacing } from '../../constants';
+import { Colors, FontFamily, FontSize, BorderRadius, Spacing } from '../../constants';
 import { haptics } from '../../lib/haptics';
 
 interface ChipProps {
@@ -55,8 +55,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border.default,
   },
   label: {
-    fontFamily: FontFamily.sans,
+    fontFamily: FontFamily.interSemibold,
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
   },
 });

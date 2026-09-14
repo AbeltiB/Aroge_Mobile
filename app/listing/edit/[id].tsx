@@ -7,8 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { X, Plus } from 'lucide-react-native';
-import { colors } from '../../../src/lib/colors';
-import { Spacing, BorderRadius } from '../../../src/constants';
+import { Colors, FontFamily, Spacing, BorderRadius } from '../../../src/constants';
 import { api } from '../../../src/lib/api';
 import type { Category, Listing, ListingPhoto } from '@arogenpm/sdk';
 import { ItemCondition } from '@arogenpm/sdk';
@@ -134,15 +133,15 @@ export default function EditListingScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={colors.brand} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.green.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }} edges={['top']}>
-      <ScreenHeader title="Edit Listing" tone="action" bordered />
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.cream.background }} edges={['top']}>
+      <ScreenHeader title="Edit Listing" bordered />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.statusRow}>
@@ -175,7 +174,7 @@ export default function EditListingScreen() {
               ))}
               {photos.length < MAX_PHOTOS && (
                 <TouchableOpacity style={styles.photoAdd} onPress={pickPhotos}>
-                  <Plus size={20} color={colors.brand} strokeWidth={2} />
+                  <Plus size={20} color={Colors.green.primary} strokeWidth={2} />
                   <Text style={styles.photoAddText}>Add</Text>
                 </TouchableOpacity>
               )}
@@ -204,7 +203,7 @@ export default function EditListingScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {categories.map((cat) => (
-                  <Chip key={cat.id} label={cat.nameEn} selected={form.categoryId === cat.id} onPress={() => update('categoryId', cat.id)} tone="action" />
+                  <Chip key={cat.id} label={cat.nameEn} selected={form.categoryId === cat.id} onPress={() => update('categoryId', cat.id)} />
                 ))}
               </View>
             </ScrollView>
@@ -214,7 +213,7 @@ export default function EditListingScreen() {
             <Text style={styles.label}>Condition *</Text>
             <View style={styles.chipWrap}>
               {CONDITIONS.map((c) => (
-                <Chip key={c} label={c.replace('_', ' ')} selected={form.condition === c} onPress={() => update('condition', c)} tone="action" />
+                <Chip key={c} label={c.replace('_', ' ')} selected={form.condition === c} onPress={() => update('condition', c)} />
               ))}
             </View>
           </View>
@@ -230,7 +229,7 @@ export default function EditListingScreen() {
               <Switch
                 value={form.negotiable}
                 onValueChange={(v) => update('negotiable', v)}
-                trackColor={{ true: colors.brand }}
+                trackColor={{ true: Colors.green.primary }}
                 style={{ marginTop: 14 }}
               />
             </View>
@@ -255,25 +254,25 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing[4], gap: Spacing[3] },
   statusRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: BorderRadius.md, padding: 12,
-    borderWidth: 1, borderColor: colors.border,
+    backgroundColor: Colors.cream.surface, borderRadius: BorderRadius.md, padding: 12,
+    borderWidth: 1, borderColor: Colors.line,
   },
-  statusLabel: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  statusLabel: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
   section: { gap: Spacing[3] },
   field: { gap: 4 },
   row: { flexDirection: 'row', gap: Spacing[3] },
   negotiableField: { gap: 4 },
-  label: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  label: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  photoThumb: { width: 76, height: 76, borderRadius: BorderRadius.md, overflow: 'hidden', backgroundColor: colors.brandTint },
+  photoThumb: { width: 76, height: 76, borderRadius: BorderRadius.md, overflow: 'hidden', backgroundColor: Colors.green.tint },
   photoImage: { width: '100%', height: '100%' },
   photoRemove: {
     position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10,
     backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center',
   },
   photoAdd: {
-    width: 76, height: 76, borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: colors.border,
+    width: 76, height: 76, borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: Colors.line,
     borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 2,
   },
-  photoAddText: { fontSize: 11, color: colors.brand, fontWeight: '600' },
+  photoAddText: { fontFamily: FontFamily.interSemibold, fontSize: 11, color: Colors.green.primary },
 });
