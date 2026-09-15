@@ -1,24 +1,43 @@
 'use client';
 
 import { Tabs } from 'expo-router';
-import { View, Text } from 'react-native';
-import { Home, Search, MessageCircle, User, Store } from 'lucide-react-native';
+import { View, Text, Pressable, GestureResponderEvent } from 'react-native';
+import { Home, Search, MessageCircle, User, Store, Tag } from 'lucide-react-native';
 import { Colors, FontFamily } from '../../../src/constants';
 import { useAppState } from '../../../src/context/AppContext';
 
-function SellerPill({ label, active }: { label: string; active: boolean }) {
+// react-navigation's default tabBarIcon slot is sized for a small square
+// icon and clips anything wider — a text pill rendered there got cut off
+// to "S" + half an "E". tabBarButton renders the whole tab (full width,
+// no icon-slot constraint), so the pill controls its own layout instead.
+function SellTabButton({ onPress, accessibilityState }: { onPress?: (e: GestureResponderEvent) => void; accessibilityState?: { selected?: boolean } }) {
+  const active = !!accessibilityState?.selected;
   return (
-    <View
-      style={{
-        backgroundColor: active ? Colors.terracotta.primary : Colors.terracotta.tint,
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-        marginTop: 2,
-      }}
-    >
-      <Text style={{ fontFamily: FontFamily.interBold, color: active ? '#ffffff' : Colors.terracotta.primary, fontSize: 10 }}>{label}</Text>
-    </View>
+    <Pressable onPress={onPress} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
+          backgroundColor: active ? Colors.terracotta.primary : Colors.terracotta.tint,
+          borderRadius: 14,
+          paddingHorizontal: 14,
+          paddingVertical: 7,
+        }}
+      >
+        <Tag size={13} color={active ? '#ffffff' : Colors.terracotta.primary} strokeWidth={2.4} />
+        <Text
+          style={{
+            fontFamily: FontFamily.interBold,
+            color: active ? '#ffffff' : Colors.terracotta.primary,
+            fontSize: 12,
+            letterSpacing: 0.3,
+          }}
+        >
+          Sell
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -59,7 +78,7 @@ export default function TabsLayout() {
         name='sell'
         options={{
           title: '',
-          tabBarIcon: ({ focused }) => <SellerPill label="SELL" active={focused} />,
+          tabBarButton: (props) => <SellTabButton {...props} />,
         }}
       />
       <Tabs.Screen
