@@ -6,7 +6,7 @@ import type { JwtUserPayload } from '@arogenpm/sdk'
 type StartResponse = { token: string; deepLink: string; expiresIn: number }
 type PollResponse =
   | { status: 'pending' }
-  | { status: 'verified'; accessToken: string; user: JwtUserPayload }
+  | { status: 'verified'; accessToken: string; refreshToken: string; user: JwtUserPayload }
 
 const POLL_INTERVAL_MS = 2000
 const POLL_TIMEOUT_MS = 5 * 60 * 1000
@@ -31,6 +31,7 @@ export async function loginWithTelegram(): Promise<{ user: JwtUserPayload } | nu
     if (poll.data.status === 'pending') continue
 
     await tokenStorage.setAccess(poll.data.accessToken)
+    await tokenStorage.setRefresh(poll.data.refreshToken)
     await tokenStorage.setUser(poll.data.user)
     return { user: poll.data.user }
   }

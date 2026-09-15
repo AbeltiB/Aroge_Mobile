@@ -4,8 +4,10 @@ import { router } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import { Colors, FontFamily, FontSize, LetterSpacing } from '../constants';
 import { Logo } from '../components/ui';
+import { useAppState } from '../context/AppContext';
 
 export default function SplashScreen() {
+  const { isAuthenticated, hasSeenOnboarding } = useAppState();
   const scale = useSharedValue(0.85);
   const opacity = useSharedValue(0);
   const taglineOpacity = useSharedValue(0);
@@ -15,9 +17,14 @@ export default function SplashScreen() {
     opacity.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
     taglineOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
 
-    const timer = setTimeout(() => router.replace('/onboarding'), 1500);
+    // AppProvider withholds rendering until the stored session/onboarding
+    // state has loaded, so by the time this mounts isAuthenticated and
+    // hasSeenOnboarding already reflect reality — a returning, already
+    // logged-in user should never see onboarding or login again.
+    const destination = isAuthenticated ? '/(app)/(tabs)' : hasSeenOnboarding ? '/(auth)' : '/onboarding';
+    const timer = setTimeout(() => router.replace(destination), 1500);
     return () => clearTimeout(timer);
-  }, [scale, opacity, taglineOpacity]);
+  }, [scale, opacity, taglineOpacity, isAuthenticated, hasSeenOnboarding]);
 
   const markStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

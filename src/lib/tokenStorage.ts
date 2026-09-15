@@ -5,6 +5,7 @@ const REFRESH_KEY = 'aroge_refresh_token'
 const USER_KEY = 'aroge_user'
 const SELLER_MODE_KEY = 'aroge_seller_mode'
 const SELLER_PROFILE_KEY = 'aroge_seller_profile'
+const ONBOARDING_SEEN_KEY = 'aroge_onboarding_seen'
 
 export interface SellerProfile {
   businessId?: string
@@ -38,6 +39,14 @@ export const tokenStorage = {
   },
   setSellerProfile: (profile: SellerProfile) =>
     SecureStore.setItemAsync(SELLER_PROFILE_KEY, JSON.stringify(profile)),
+  getHasSeenOnboarding: async (): Promise<boolean> => {
+    const raw = await SecureStore.getItemAsync(ONBOARDING_SEEN_KEY)
+    return raw === 'true'
+  },
+  setHasSeenOnboarding: (seen: boolean) =>
+    SecureStore.setItemAsync(ONBOARDING_SEEN_KEY, seen ? 'true' : 'false'),
+  // Deliberately NOT cleared by clearAll — logging out shouldn't make a
+  // returning user sit through onboarding again, only the auth/session bits.
   clearAll: async () => {
     await Promise.all([
       SecureStore.deleteItemAsync(ACCESS_KEY),

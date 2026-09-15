@@ -35,10 +35,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tokenStorage.getUser(),
       tokenStorage.getSellerMode(),
       tokenStorage.getSellerProfile(),
-    ]).then(([storedUser, storedSellerMode, storedSellerProfile]) => {
+      tokenStorage.getHasSeenOnboarding(),
+    ]).then(([storedUser, storedSellerMode, storedSellerProfile, storedHasSeenOnboarding]) => {
       if (storedUser) setUser(storedUser);
       setSellerModeState(storedSellerMode);
       if (storedSellerProfile) setSellerProfileState(storedSellerProfile);
+      setHasSeenOnboarding(storedHasSeenOnboarding);
       setBootstrapped(true);
     });
   }, []);
@@ -98,7 +100,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSellerProfileState(null);
         setUnreadCount(0);
       },
-      completeOnboarding: () => setHasSeenOnboarding(true),
+      completeOnboarding: () => {
+        setHasSeenOnboarding(true);
+        void tokenStorage.setHasSeenOnboarding(true);
+      },
     }),
     [user, hasSeenOnboarding, sellerMode, sellerProfile, unreadCount, refreshUnread, setSellerMode, setSellerProfile],
   );
