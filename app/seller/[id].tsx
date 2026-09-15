@@ -181,15 +181,28 @@ export default function SellerProfileScreen() {
           </View>
 
           {!isSelf && (
-            <Button
-              label={profile.isFollowing ? 'Following' : '+ Follow'}
-              variant={profile.isFollowing ? 'secondary' : 'primary'}
-              size="sm"
-              fullWidth={false}
-              disabled={followPending}
-              onPress={toggleFollow}
-              style={styles.followBtn}
-            />
+            <View style={styles.actionRow}>
+              <Button
+                label="Message"
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                onPress={() => router.push({
+                  pathname: '/messages/[listingId]/[otherUserId]',
+                  params: { listingId: 'general', otherUserId: profile.id, name: profile.name },
+                })}
+                style={styles.actionBtn}
+              />
+              <Button
+                label={profile.isFollowing ? 'Following' : '+ Follow'}
+                variant={profile.isFollowing ? 'secondary' : 'primary'}
+                size="sm"
+                fullWidth={false}
+                disabled={followPending}
+                onPress={toggleFollow}
+                style={styles.actionBtn}
+              />
+            </View>
           )}
         </View>
 
@@ -271,7 +284,8 @@ const styles = StyleSheet.create({
   statBox: { alignItems: 'center' },
   statValue: { fontFamily: FontFamily.displaySemibold, fontSize: 16, color: Colors.ink },
   statLabel: { fontFamily: FontFamily.interRegular, fontSize: 11, color: Colors.inkSoft, marginTop: 1 },
-  followBtn: { marginTop: 10, paddingHorizontal: 24 },
+  actionRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  actionBtn: { paddingHorizontal: 22 },
   sectionTitle: {
     fontFamily: FontFamily.interBold, fontSize: 13, color: Colors.ink,
     textTransform: 'uppercase', letterSpacing: 0.8,

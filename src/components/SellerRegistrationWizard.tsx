@@ -6,8 +6,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { User, Store, Check, ChevronLeft, ArrowRight, PartyPopper, Lightbulb, Lock, FileText, CheckCircle2 } from 'lucide-react-native';
-import { colors } from '../lib/colors';
-import { Colors } from '../constants';
+import { Colors, FontFamily } from '../constants';
 import { api } from '../lib/api';
 import { useAppState } from '../context/AppContext';
 import type { SellerProfile } from '../lib/tokenStorage';
@@ -107,9 +106,9 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
             {STEPS.map((s, i) => (
               <View key={s} style={[styles.progressStep, i <= step && styles.progressStepActive]}>
                 <View style={[styles.progressDot, i <= step && styles.progressDotActive, i === step && styles.progressDotCurrent]}>
-                  {i < step && <Check size={12} color={colors.onBrand} strokeWidth={3} />}
-                  {i === step && <Text style={{ color: colors.onBrand, fontSize: 11, fontWeight: '700' }}>{i + 1}</Text>}
-                  {i > step && <Text style={{ color: colors.textMuted, fontSize: 11 }}>{i + 1}</Text>}
+                  {i < step && <Check size={12} color={'#ffffff'} strokeWidth={3} />}
+                  {i === step && <Text style={{ fontFamily: FontFamily.interBold, color: '#ffffff', fontSize: 11 }}>{i + 1}</Text>}
+                  {i > step && <Text style={{ color: Colors.inkSoft, fontSize: 11 }}>{i + 1}</Text>}
                 </View>
                 <Text style={[styles.progressLabel, i === step && styles.progressLabelActive]} numberOfLines={1}>
                   {s}
@@ -220,7 +219,7 @@ export default function SellerRegistrationWizard({ visible, onComplete, onCancel
 
                     <View style={styles.field}>
                       <Text style={styles.label}>
-                        Business License <Text style={{ color: colors.textMuted }}>— optional for now, required to get verified</Text>
+                        Business License <Text style={{ color: Colors.inkSoft }}>— optional for now, required to get verified</Text>
                       </Text>
                       <TouchableOpacity
                         style={styles.licensePicker}
@@ -366,14 +365,14 @@ const reviewStyles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: Colors.line,
   },
-  label: { fontSize: 13, color: colors.textMuted, flex: 1 },
-  value: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, flex: 2, textAlign: 'right' },
+  label: { fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.inkSoft, flex: 1 },
+  value: { fontFamily: FontFamily.interSemibold, fontSize: 14, color: Colors.ink, flex: 2, textAlign: 'right' },
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.canvas },
+  container: { flex: 1, backgroundColor: Colors.cream.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -381,96 +380,96 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: Colors.line,
   },
   cancelBtn: { width: 56 },
-  cancelText: { color: colors.action, fontSize: 15 },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  cancelText: { fontFamily: FontFamily.interRegular, color: Colors.terracotta.primary, fontSize: 15 },
+  headerTitle: { fontFamily: FontFamily.displaySemibold, fontSize: 16, color: Colors.ink },
   progress: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: Colors.line,
     gap: 4,
   },
   progressStep: { flex: 1, alignItems: 'center', gap: 4, opacity: 0.4 },
   progressStepActive: { opacity: 1 },
   progressDot: {
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: colors.border,
+    backgroundColor: Colors.line,
     alignItems: 'center', justifyContent: 'center',
   },
-  progressDotActive: { backgroundColor: colors.brandTint },
-  progressDotCurrent: { backgroundColor: colors.brand },
-  progressLabel: { fontSize: 9, color: colors.textMuted, textAlign: 'center', fontWeight: '500' },
-  progressLabelActive: { color: colors.brand, fontWeight: '700' },
+  progressDotActive: { backgroundColor: Colors.green.tint },
+  progressDotCurrent: { backgroundColor: Colors.green.primary },
+  progressLabel: { fontFamily: FontFamily.interMedium, fontSize: 9, color: Colors.inkSoft, textAlign: 'center' },
+  progressLabelActive: { fontFamily: FontFamily.interBold, color: Colors.green.primary },
   content: { padding: 20, paddingBottom: 40 },
   stepContent: { gap: 16 },
-  stepTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
-  stepDesc: { fontSize: 14, color: colors.textBody, lineHeight: 20, marginTop: -8 },
+  stepTitle: { fontFamily: FontFamily.display, fontSize: 22, color: Colors.ink },
+  stepDesc: { fontFamily: FontFamily.interRegular, fontSize: 14, color: Colors.inkSoft, lineHeight: 20, marginTop: -8 },
   typeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     padding: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: Colors.line,
   },
-  typeCardActive: { borderColor: colors.brand, backgroundColor: colors.brandTint },
+  typeCardActive: { borderColor: Colors.green.primary, backgroundColor: Colors.green.tint },
   typeIcon: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.cream.background, alignItems: 'center', justifyContent: 'center',
   },
-  typeTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
-  typeTitleActive: { color: colors.brand },
-  typeDesc: { fontSize: 12, color: colors.textBody, marginTop: 2, lineHeight: 16 },
+  typeTitle: { fontFamily: FontFamily.interBold, fontSize: 15, color: Colors.ink },
+  typeTitleActive: { color: Colors.green.primary },
+  typeDesc: { fontFamily: FontFamily.interRegular, fontSize: 12, color: Colors.inkSoft, marginTop: 2, lineHeight: 16 },
   radio: {
     width: 20, height: 20, borderRadius: 10,
-    borderWidth: 2, borderColor: colors.border,
+    borderWidth: 2, borderColor: Colors.line,
   },
-  radioActive: { borderColor: colors.brand, backgroundColor: colors.brand },
+  radioActive: { borderColor: Colors.green.primary, backgroundColor: Colors.green.primary },
   infoBox: {
     flexDirection: 'row',
     gap: 8,
-    backgroundColor: colors.brandTint,
+    backgroundColor: Colors.green.tint,
     borderRadius: 12,
     padding: 14,
     borderLeftWidth: 3,
-    borderLeftColor: colors.brand,
+    borderLeftColor: Colors.green.primary,
   },
   infoIcon: { marginTop: 1 },
-  infoText: { flex: 1, fontSize: 13, color: colors.brandDeep, lineHeight: 18 },
+  infoText: { flex: 1, fontFamily: FontFamily.interRegular, fontSize: 13, color: Colors.green.dark, lineHeight: 18 },
   field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  label: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.ink },
   licensePicker: {
-    height: 100, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border,
+    height: 100, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.line,
     borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
   },
   licensePickerContent: { alignItems: 'center', gap: 4 },
   licensePreview: { width: '100%', height: '100%' },
-  licensePickerText: { fontSize: 13, color: colors.brand, fontWeight: '600' },
+  licensePickerText: { fontFamily: FontFamily.interSemibold, fontSize: 13, color: Colors.green.primary },
   hintRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
-  licenseHint: { flex: 1, fontSize: 11, color: colors.textMuted },
+  licenseHint: { fontFamily: FontFamily.interRegular, flex: 1, fontSize: 11, color: Colors.inkSoft },
   reviewCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
     borderRadius: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: Colors.line,
   },
   footer: {
     flexDirection: 'row',
     gap: 10,
     padding: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: Colors.cream.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: Colors.line,
   },
 });

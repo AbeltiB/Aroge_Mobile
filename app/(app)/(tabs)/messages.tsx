@@ -33,7 +33,7 @@ export default function MessagesScreen() {
       ) : (
         <FlatList
           data={threads}
-          keyExtractor={(item) => `${item.listingId}-${item.otherUserId}`}
+          keyExtractor={(item) => `${item.listingId ?? 'general'}-${item.otherUserId}`}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <EmptyState
@@ -49,7 +49,7 @@ export default function MessagesScreen() {
               onPress={() => router.push({
                 pathname: '/messages/[listingId]/[otherUserId]',
                 params: {
-                  listingId: item.listingId,
+                  listingId: item.listingId ?? 'general',
                   otherUserId: item.otherUserId,
                   name: (item as any).otherUser?.name ?? '',
                   listingTitle: (item as any).listing?.title ?? '',
@@ -62,7 +62,7 @@ export default function MessagesScreen() {
                   {(item as any).otherUser?.name ?? 'User'}
                 </Text>
                 <Text style={styles.listingTitle} numberOfLines={1}>
-                  {(item as any).listing?.title ?? 'Listing'}
+                  {(item as any).listing?.title ?? 'General inquiry'}
                 </Text>
                 <Text style={styles.lastMsg} numberOfLines={1}>
                   {item.lastMessage.body}
