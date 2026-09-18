@@ -2,7 +2,7 @@
 
 import { Tabs } from 'expo-router';
 import { View, Text, Pressable, GestureResponderEvent } from 'react-native';
-import { Home, Search, MessageCircle, User, Store, Tag } from 'lucide-react-native';
+import { Home, Search, MessageCircle, User, Store, Tag, Radio } from 'lucide-react-native';
 import { Colors, FontFamily } from '../../../src/constants';
 import { useAppState } from '../../../src/context/AppContext';
 
@@ -79,6 +79,17 @@ export default function TabsLayout() {
         options={{
           title: '',
           tabBarButton: (props) => <SellTabButton {...props} />,
+        }}
+      />
+      {/* Only meaningful while running a live sale — hidden (not unmounted,
+          so its own navigation state survives toggling Seller Mode) when
+          the seller isn't in seller mode at all. */}
+      <Tabs.Screen
+        name='live'
+        options={{
+          title: 'Live',
+          href: sellerMode ? undefined : null,
+          tabBarIcon: ({ color, focused }) => <Radio color={color} size={22} strokeWidth={focused ? 2.4 : 2} />,
         }}
       />
       <Tabs.Screen
