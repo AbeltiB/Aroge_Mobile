@@ -173,9 +173,9 @@ export default function ProfileScreen() {
           </View>
 
           <MenuRow label="Notifications" Icon={Bell} onPress={() => router.push('/notifications')} />
-          <MenuRow label="Privacy & Security" Icon={Lock} onPress={() => {}} />
-          <MenuRow label="Terms & Conditions" Icon={FileText} onPress={() => {}} />
-          <MenuRow label="Help & Support" Icon={HelpCircle} onPress={() => {}} />
+          <MenuRow label="Privacy & Security" Icon={Lock} onPress={() => router.push('/privacy' as any)} />
+          <MenuRow label="Terms & Conditions" Icon={FileText} onPress={() => router.push('/terms' as any)} />
+          <MenuRow label="Help & Support" Icon={HelpCircle} onPress={() => router.push('/help' as any)} />
         </Card>
 
         <Button label="Sign Out" variant="danger" onPress={handleLogout} style={{ marginTop: 4 }} />
