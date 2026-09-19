@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, Image, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
 import { Archivo_700Bold, Archivo_800ExtraBold } from '@expo-google-fonts/archivo';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
@@ -16,6 +18,14 @@ import { Button } from '../src/components/ui';
 import type { Notification } from '@arogenpm/sdk';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+const sentryDsn = Constants.expoConfig?.extra?.sentryDsn as string | undefined;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    tracesSampleRate: 0,
+  });
+}
 
 function PopupOverlay() {
   const { isAuthenticated, refreshUnread } = useAppState();
@@ -71,7 +81,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontsError] = useFonts({
     Archivo_700Bold,
     Archivo_800ExtraBold,
@@ -112,6 +122,8 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 const pStyles = StyleSheet.create({
   backdrop: {

@@ -58,7 +58,8 @@
           "color": "#1f7a5a"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true
@@ -68,6 +69,7 @@
       "imgproxyUrl": "https://media.aroge.online",
       "telegramBotUsername": "aroge_ecommerce_bot",
       "deepLinkScheme": "aroge",
+      "sentryDsn": "",
       "router": {},
       "eas": {
         "projectId": "c27d5488-8985-4739-bec2-5dc438950b8e"
