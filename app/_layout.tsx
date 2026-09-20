@@ -11,6 +11,7 @@ import { NotoSansEthiopic_500Medium, NotoSansEthiopic_700Bold } from '@expo-goog
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useAppState } from '../src/context/AppContext';
+import { CartProvider } from '../src/context/CartContext';
 import { I18nProvider } from '../src/i18n';
 import { api } from '../src/lib/api';
 import { Colors, FontFamily, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../src/constants';
@@ -104,18 +105,20 @@ function RootLayout() {
       <SafeAreaProvider>
         <I18nProvider>
           <AppProvider>
-            <AppShell>
-              {/* No explicit Stack.Screen children — none of them set per-route
-                  options, so they're purely decorative. Most of these route
-                  directories (listing/, order/, bundle/, etc.) have no
-                  _layout.tsx of their own, so expo-router flattens their
-                  files into leaf routes like "bundle/[id]" rather than a
-                  collapsible "bundle" group; declaring the bare directory
-                  name here doesn't match anything and just produces a
-                  "[Layout children]: No route named ..." warning. File-based
-                  routing registers every screen automatically regardless. */}
-              <Stack screenOptions={{ headerShown: false }} />
-            </AppShell>
+            <CartProvider>
+              <AppShell>
+                {/* No explicit Stack.Screen children — none of them set per-route
+                    options, so they're purely decorative. Most of these route
+                    directories (listing/, order/, bundle/, etc.) have no
+                    _layout.tsx of their own, so expo-router flattens their
+                    files into leaf routes like "bundle/[id]" rather than a
+                    collapsible "bundle" group; declaring the bare directory
+                    name here doesn't match anything and just produces a
+                    "[Layout children]: No route named ..." warning. File-based
+                    routing registers every screen automatically regardless. */}
+                <Stack screenOptions={{ headerShown: false }} />
+              </AppShell>
+            </CartProvider>
           </AppProvider>
         </I18nProvider>
       </SafeAreaProvider>

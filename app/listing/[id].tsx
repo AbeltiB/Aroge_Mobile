@@ -5,13 +5,14 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, MoreHorizontal, Heart, MapPin, ChevronRight, PackageSearch, MessageCircle } from 'lucide-react-native';
+import { ChevronLeft, MoreHorizontal, Heart, MapPin, ChevronRight, PackageSearch, MessageCircle, ShoppingBag, Check } from 'lucide-react-native';
 import { Colors, FontFamily, FontSize, Spacing, BorderRadius } from '../../src/constants';
 import { api } from '../../src/lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing } from '@arogenpm/sdk';
 import { RemoteImage, IconButton, Badge, Avatar, EmptyState, BottomSheet, Input, Button, PriceText } from '../../src/components/ui';
 import { haptics } from '../../src/lib/haptics';
+import { useCart } from '../../src/context/CartContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CONDITION_LABELS: Record<string, string> = {
@@ -21,6 +22,8 @@ const CONDITION_LABELS: Record<string, string> = {
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { isInCart, addToCart, removeFromCart } = useCart();
+  const [cartPending, setCartPending] = useState(false);
   const [listing, setListing] = useState<Listing & { seller?: any; photos?: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [offerAmount, setOfferAmount] = useState('');
@@ -55,6 +58,19 @@ export default function ListingDetailScreen() {
       : await api.post(`/listings/${listing.id}/save`, {});
     if (!res.success) setSaved(wasSaved);
     setSavePending(false);
+  }
+
+  async function toggleCart() {
+    if (!listing || cartPending) return;
+    haptics.tap();
+    setCartPending(true);
+    if (isInCart(listing.id)) {
+      await removeFromCart(listing.id);
+    } else {
+      const success = await addToCart(listing.id);
+      if (!success) Alert.alert('Error', 'Could not add this to your cart');
+    }
+    setCartPending(false);
   }
 
   async function submitReport() {
@@ -198,6 +214,11 @@ export default function ListingDetailScreen() {
             <MessageCircle size={20} color={Colors.green.primary} />
           </IconButton>
         )}
+        <IconButton tone="tint" size="lg" onPress={toggleCart} disabled={cartPending}>
+          {isInCart(listing.id)
+            ? <Check size={20} color={Colors.green.primary} />
+            : <ShoppingBag size={20} color={Colors.green.primary} />}
+        </IconButton>
         <View style={{ flex: 1 }}>
           <Button label="Buy — held in escrow" variant="primary" onPress={handleBuyNow} />
         </View>

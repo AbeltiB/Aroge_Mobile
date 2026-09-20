@@ -10,6 +10,7 @@ import { api } from '../lib/api';
 import { formatETB } from '@arogenpm/sdk';
 import type { Listing, Category } from '@arogenpm/sdk';
 import { useAppState } from '../context/AppContext';
+import { useCart } from '../context/CartContext';
 import { Input, EmptyState, SkeletonListingCard, Chip, ProductCard } from '../components/ui';
 import { haptics } from '../lib/haptics';
 
@@ -22,6 +23,7 @@ const CONDITION_LABELS: Record<string, string> = {
 export default function BuyerHomeScreen() {
   const router = useRouter();
   const { unreadCount } = useAppState();
+  const { cartCount } = useCart();
   const [listings, setListings] = useState<ListingsPage['items']>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCat, setSelectedCat] = useState('');
@@ -81,6 +83,14 @@ export default function BuyerHomeScreen() {
             hitSlop={8}
           >
             <SearchIcon size={20} color={Colors.ink} strokeWidth={2} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/cart' as any)} style={styles.iconBtn} hitSlop={8}>
+            <ShoppingBag size={20} color={Colors.ink} strokeWidth={2} />
+            {cartCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
